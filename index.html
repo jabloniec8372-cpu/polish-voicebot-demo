@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Polish Recruitment Voicebot – working demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f4f1ea; --paper:#fffdf8; --ink:#1d2230; --muted:#6a6f7c; --line:#e3ddd0;
+  --brand:#c8102e; --brand-soft:#fbe7ea; --ok:#1f7a4d; --ok-soft:#e3f3ea; --warn:#a15c00; --warn-soft:#fdf0dc;
+  --phone:#151a24; --phone2:#1f2633; --bot:#2a3344; --me:#c8102e;
+  --mono:'IBM Plex Mono',ui-monospace,monospace; --sans:'IBM Plex Sans',system-ui,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 var(--sans)}
+header{padding:22px 28px 0;max-width:1400px;margin:0 auto}
+.kicker{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--brand)}
+h1{margin:4px 0 6px;font-size:26px;letter-spacing:-.01em}
+.sub{color:var(--muted);max-width:860px;margin:0}
+.flag{display:inline-block;width:18px;height:12px;vertical-align:-1px;margin-right:6px;background:linear-gradient(#fff 50%,var(--brand) 50%);border:1px solid #ddd}
+nav{display:flex;gap:4px;margin-top:18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+nav button{border:0;background:none;padding:10px 14px;font:500 14px var(--sans);color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+nav button.on{color:var(--ink);border-bottom-color:var(--brand)}
+main{max-width:1400px;margin:0 auto;padding:20px 28px 40px}
+.view{display:none}.view.on{display:block}
+.grid{display:grid;grid-template-columns:260px minmax(340px,1fr) minmax(340px,1fr);gap:18px;align-items:start}
+@media (max-width:1100px){.grid{grid-template-columns:1fr}}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px}
+.card h3{margin:0 0 10px;font-size:13px;font-family:var(--mono);font-weight:500;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+select,input[type=text]{width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;font:14px var(--sans);background:#fff;color:var(--ink)}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{flex:1;border:0;background:#fff;padding:8px 6px;font:500 13px var(--sans);cursor:pointer;color:var(--muted)}
+.seg button.on{background:var(--ink);color:#fff}
+.tog{display:flex;align-items:center;gap:8px;font-size:13px;margin:8px 0;cursor:pointer}
+.tog input{accent-color:var(--brand)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:0;border-radius:999px;padding:10px 16px;font:600 14px var(--sans);cursor:pointer}
+.btn.call{background:var(--ok);color:#fff;width:100%;margin-top:14px}
+.btn.hang{background:var(--brand);color:#fff}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--ink)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.small{font-size:12px;color:var(--muted)}
+/* phone */
+.phone{background:var(--phone);color:#e9edf5;border-radius:18px;padding:0;overflow:hidden;display:flex;flex-direction:column;height:640px}
+.ph-top{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--phone2)}
+.ph-who{font-weight:600}.ph-who small{display:block;font-weight:400;color:#9aa4b8;font-family:var(--mono);font-size:12px}
+.status{font:500 12px var(--mono);padding:4px 9px;border-radius:999px;background:#2d3546;color:#9aa4b8}
+.status.live{background:#173d2b;color:#5fd69a}
+.status.live::before{content:"● ";animation:blink 1.2s infinite}
+@keyframes blink{50%{opacity:.2}}
+.chat{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:86%;padding:9px 13px;border-radius:14px;font-size:14.5px}
+.msg.bot{background:var(--bot);align-self:flex-start;border-bottom-left-radius:4px}
+.msg.me{background:var(--me);align-self:flex-end;border-bottom-right-radius:4px}
+.msg.sys{align-self:center;background:transparent;color:#8a93a6;font:12px var(--mono);text-align:center;max-width:100%}
+.msg .tag{display:block;font:11px var(--mono);color:#9aa4b8;margin-top:4px}
+.msg.me .tag{color:#ffd0d6}
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:8px 12px 0}
+.chip{border:1px solid #3a4457;background:transparent;color:#cfd6e4;border-radius:999px;padding:5px 10px;font:13px var(--sans);cursor:pointer}
+.chip:hover{border-color:#8a93a6}
+.chip.alt{border-style:dashed;color:#9aa4b8}
+.composer{display:flex;gap:8px;padding:12px;align-items:center}
+.composer input{flex:1;background:#232a38;border:1px solid #333d50;color:#fff}
+.mic{width:42px;height:42px;border-radius:50%;border:0;background:#2d3546;color:#fff;font-size:18px;cursor:pointer}
+.mic.rec{background:var(--brand);animation:blink 1s infinite}
+.send{background:#e9edf5;color:var(--phone)}
+/* ATS */
+.ats-head{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.ats-head b{font-size:16px}
+.api-pill{font:500 11px var(--mono);padding:3px 8px;border-radius:999px;background:var(--ok-soft);color:var(--ok)}
+.api-pill.down{background:var(--brand-soft);color:var(--brand)}
+table.fields{width:100%;border-collapse:collapse;font-size:13.5px;margin-top:8px}
+table.fields td{border-top:1px solid var(--line);padding:7px 4px;vertical-align:top}
+table.fields td:first-child{color:var(--muted);width:42%}
+.val{font-weight:600}
+.raw{display:block;font:12px var(--mono);color:var(--muted);font-weight:400}
+.empty{color:var(--warn);font-weight:500}
+.cur td{background:#fff7e0}
+.log{font:12px/1.45 var(--mono);max-height:300px;overflow:auto;background:#fbfaf6;border:1px solid var(--line);border-radius:8px;padding:8px;margin-top:8px}
+.log .e{padding:6px 0;border-bottom:1px dashed var(--line);white-space:pre-wrap;word-break:break-word}
+.m-PATCH{color:#7b3fa0}.m-POST{color:#0f6aa6}.c200{color:var(--ok)}.c503{color:var(--brand)}.cQ{color:var(--warn)}
+.outbox{margin-top:8px;font:12px var(--mono);color:var(--warn)}
+.result-badge{display:inline-block;font:600 12px var(--mono);padding:3px 8px;border-radius:6px;background:var(--ink);color:#fff}
+/* playground & tests */
+.pg{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+@media (max-width:900px){.pg{grid-template-columns:1fr}}
+pre.out{background:#1d2230;color:#d9f2e4;border-radius:10px;padding:14px;font:13px var(--mono);min-height:120px;white-space:pre-wrap}
+table.tests{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tests th{text-align:left;font:500 12px var(--mono);color:var(--muted);text-transform:uppercase;padding:6px}
+table.tests td{border-top:1px solid var(--line);padding:6px}
+.pass{color:var(--ok);font-weight:600}.failc{color:var(--brand);font-weight:600}
+.score{font-size:28px;font-weight:700}
+.how{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.how .card p{margin:6px 0 0;color:#3b4150;font-size:14px}
+.how .card b{font-size:15px}
+.note{background:var(--warn-soft);border:1px solid #f1d9ad;border-radius:10px;padding:10px 12px;font-size:13px;margin-top:12px}
+code{font-family:var(--mono);font-size:.92em;background:#efeadf;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <div class="kicker"><span class="flag"></span>Working demo · outbound recruitment voicebot · Polish</div>
+  <h1>“Marta” — Polish screening-call voicebot with ATS write-back</h1>
+  <p class="sub">The bot calls a candidate, checks it is the right person, asks 11 screening questions, turns free Polish answers into fixed ATS values, answers candidate questions only from the FAQ, and saves every answer through a REST API — with retries when the API is down. The agency, candidates and API are fictional; the dialogue logic is real.</p>
+  <nav>
+    <button class="on" data-v="call">Call demo</button>
+    <button data-v="pg">Answer normalizer</button>
+    <button data-v="tests">Test suite</button>
+    <button data-v="how">How it works</button>
+  </nav>
+</header>
+<main>
+<!-- CALL -->
+<section class="view on" id="v-call">
+<div class="grid">
+  <div class="card">
+    <h3>Campaign</h3>
+    <div class="seg" id="mode">
+      <button class="on" data-m="A">A · Screening</button>
+      <button data-m="C">C · Job offer</button>
+    </div>
+    <label>Candidate (from ATS)</label>
+    <select id="cand"></select>
+    <label>Simulate</label>
+    <label class="tog"><input type="checkbox" id="simNoAnswer"> no answer</label>
+    <label class="tog"><input type="checkbox" id="simVoicemail"> voicemail picks up</label>
+    <label class="tog"><input type="checkbox" id="simApiDown"> ATS API is down (503)</label>
+    <label>Bot voice</label>
+    <label class="tog"><input type="checkbox" id="tts" checked> speak bot lines (pl-PL)</label>
+    <button class="btn call" id="btnCall">📞 Start call</button>
+    <p class="small" style="margin-top:12px">Answer by typing, by clicking a suggested answer, or with 🎤 (Chrome, where the microphone is allowed). Leave the field empty and press ⏎ to simulate silence.</p>
+  </div>
+
+  <div class="phone">
+    <div class="ph-top">
+      <div class="ph-who" id="phWho">Marta · AI voice agent<small>idle</small></div>
+      <span class="status" id="phStatus">ready</span>
+    </div>
+    <div class="chat" id="chat"><div class="msg sys">Choose a candidate and press “Start call”.</div></div>
+    <div class="chips" id="chips"></div>
+    <div class="composer">
+      <button class="mic" id="mic" title="Speak (pl-PL)">🎤</button>
+      <input type="text" id="answer" placeholder="Candidate answers in Polish…" autocomplete="off" disabled>
+      <button class="btn send" id="btnSend" disabled>⏎</button>
+      <button class="btn hang" id="btnHang" disabled title="Candidate hangs up">✕</button>
+    </div>
+  </div>
+
+  <div>
+    <div class="card">
+      <div class="ats-head"><b id="atsName">—</b><span class="api-pill" id="apiPill">ATS API · online</span></div>
+      <div class="small" id="atsMeta">custom fields</div>
+      <table class="fields" id="fields"></table>
+      <div id="callResult" style="margin-top:10px"></div>
+    </div>
+    <div class="card" style="margin-top:14px">
+      <h3>REST API log</h3>
+      <div class="log" id="log"><div class="small">No requests yet.</div></div>
+      <div class="outbox" id="outbox"></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<!-- PLAYGROUND -->
+<section class="view" id="v-pg">
+<div class="pg">
+  <div class="card">
+    <h3>Try any answer</h3>
+    <label>Field</label>
+    <select id="pgField"></select>
+    <label>Candidate's answer (Polish)</label>
+    <input type="text" id="pgText" placeholder="e.g. od przyszłego miesiąca">
+    <div id="pgEx" class="chips" style="padding:10px 0 0"></div>
+    <p class="small" id="pgAllowed"></p>
+  </div>
+  <div>
+    <pre class="out" id="pgOut">{ }</pre>
+    <p class="small">Relative dates are resolved against today's date. Two unclear answers in a row leave the field empty in the ATS and add it to the call note, as the spec asks.</p>
+  </div>
+</div>
+</section>
+
+<!-- TESTS -->
+<section class="view" id="v-tests">
+<div class="card">
+  <div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap">
+    <span class="score" id="score"></span><span class="small">Cases run live in your browser against the same engine the call uses (base date 20 Nov 2026).</span>
+  </div>
+  <table class="tests" id="tests" style="margin-top:12px"></table>
+</div>
+</section>
+
+<!-- HOW -->
+<section class="view" id="v-how">
+<div class="how">
+  <div class="card"><b>1 · Call request</b><p>The ATS sends a call request for a candidate. The bot dials; <em>no answer</em> and <em>voicemail</em> are saved as call results and scheduled for retry. On voicemail the bot leaves a short message without any personal data.</p></div>
+  <div class="card"><b>2 · Right person?</b><p>The bot says it is an AI assistant, then confirms the name. “Kto mówi?” gets a short explanation and the question again; “pomyłka” ends the call politely and marks <code>wrong_person</code>.</p></div>
+  <div class="card"><b>3 · 11 questions → fixed values</b><p>Each answer goes through a field-specific normalizer: relative dates (“po świętach”, “za dwa tygodnie”), licence categories (“tir” → C+E, “2 WJO” → II WJO), German level, experience in months or years. The bot reads the value back so the candidate can hear what was saved.</p></div>
+  <div class="card"><b>4 · Unclear or silent</b><p>The bot asks again in a different way. After two failed tries the field stays empty and the call note says why, so a recruiter can follow up.</p></div>
+  <div class="card"><b>5 · FAQ only from the client's sheet</b><p>When the candidate asks something (“a ile kosztuje zakwaterowanie?”), the bot answers from the FAQ table, shows which entry it used, then returns to the open question. Anything not in the FAQ is never improvised; it is logged for the recruiter.</p></div>
+  <div class="card"><b>6 · Write-back that survives outages</b><p>Every answer is saved right away (a dropped call keeps what was collected). If the ATS API returns 503 the bot retries with backoff, then holds the request in an outbox and sends it when the API is back. Requests are idempotent, so a retry never writes twice.</p></div>
+  <div class="card"><b>7 · Module C · job offer</b><p>Same integration: the bot presents one offer, answers FAQ questions, and saves <code>interested</code> / <code>not_interested</code> / <code>no_decision</code>. “Muszę pogadać z żoną” is a <em>no decision</em>, not a no.</p></div>
+  <div class="card"><b>On a real platform</b><p>This demo runs in the browser (Web Speech for voice). In production the same flow, value mapping and error handling are built on the voice platform's own telephony, ASR/TTS and HTTP integration blocks.</p></div>
+</div>
+</section>
+</main>
+
+<script src="engine.js"></script>
+<script src="cases.js"></script>
+<script>
+(function(){
+'use strict';
+var E = window.VBEngine;
+var $ = function(id){return document.getElementById(id);};
+var TODAY = (function(){var d=new Date();return E.mk(d.getFullYear(), d.getMonth()+1, d.getDate());})();
+
+// ---------- fictional ATS data ----------
+var CANDIDATES = [
+  {id:'48211', first:'Jan', last:'Kowalski', g:'m', phone:'+48 600 *** 214'},
+  {id:'48236', first:'Anna', last:'Nowak', g:'f', phone:'+48 512 *** 908'},
+  {id:'48302', first:'Piotr', last:'Wiśniewski', g:'m', phone:'+48 698 *** 377'}
+];
+var OFFER = {id:'JO-1187', title:'Operator wózka widłowego', place:'magazyn pod Lipskiem', rate:'15,50 euro brutto za godzinę', start:'piątego stycznia',
+  text:'operator wózka widłowego w magazynie pod Lipskiem, piętnaście euro pięćdziesiąt brutto za godzinę, zakwaterowanie zapewnione, start piątego stycznia'};
+
+var G = {
+  m:{P:'Pan',Pd:'Panu',Pg:'Pana',Pi:'Panem',zaint:'zainteresowany'},
+  f:{P:'Pani',Pd:'Pani',Pg:'Pani',Pi:'Panią',zaint:'zainteresowana'}
+};
+function fill(s){var g=G[S.cand.g];return s.replace(/\{P\}/g,g.P).replace(/\{Pd\}/g,g.Pd).replace(/\{Pg\}/g,g.Pg).replace(/\{Pi\}/g,g.Pi).replace(/\{zaint\}/g,g.zaint);}
+
+// ---------- state ----------
+var S = {mode:'A', cand:CANDIDATES[0], phase:'idle', qi:0, tries:0, fields:{}, unanswered:[], faqUsed:[], notes:[], result:null};
+
+// ---------- tabs ----------
+document.querySelectorAll('nav button').forEach(function(b){b.onclick=function(){
+  document.querySelectorAll('nav button').forEach(function(x){x.classList.toggle('on',x===b);});
+  document.querySelectorAll('.view').forEach(function(v){v.classList.toggle('on',v.id==='v-'+b.dataset.v);});
+};});
+document.querySelectorAll('#mode button').forEach(function(b){b.onclick=function(){
+  if(S.phase!=='idle'&&S.phase!=='ended')return;
+  S.mode=b.dataset.m; document.querySelectorAll('#mode button').forEach(function(x){x.classList.toggle('on',x===b);}); renderAts();
+};});
+CANDIDATES.forEach(function(c,i){var o=document.createElement('option');o.value=i;o.textContent=c.first+' '+c.last+' · #'+c.id;$('cand').appendChild(o);});
+$('cand').onchange=function(){if(S.phase!=='idle'&&S.phase!=='ended')return;S.cand=CANDIDATES[+this.value];resetCall();};
+
+// ---------- speech ----------
+var voice=null;
+function pickVoice(){try{var vs=speechSynthesis.getVoices();voice=vs.filter(function(v){return /^pl/i.test(v.lang);})[0]||null;}catch(e){}}
+try{pickVoice();speechSynthesis.onvoiceschanged=pickVoice;}catch(e){}
+function speak(text){
+  if(!$('tts').checked)return;
+  try{var u=new SpeechSynthesisUtterance(text.replace(/C\+E/g,'ce plus e').replace(/\bII WJO\b/g,'dwa WJO').replace(/\bI WJO\b/g,'jeden WJO').replace(/\bAI\b/g,'ej aj'));u.lang='pl-PL';if(voice)u.voice=voice;u.rate=1.02;speechSynthesis.speak(u);}catch(e){}
+}
+var SR = window.SpeechRecognition||window.webkitSpeechRecognition, rec=null;
+$('mic').onclick=function(){
+  if(!SR){sys('Speech recognition is not available in this browser. Type the answer instead.');return;}
+  if(S.phase==='idle'||S.phase==='ended'){sys('Start the call first.');return;}
+  if(rec){rec.stop();return;}
+  try{
+    rec=new SR();rec.lang='pl-PL';rec.interimResults=false;rec.maxAlternatives=1;
+    $('mic').classList.add('rec');
+    rec.onresult=function(e){var t=e.results[0][0].transcript;answer(t,'ASR');};
+    rec.onerror=function(e){sys(e.error==='not-allowed'||e.error==='service-not-allowed'?'Microphone is blocked here (embedded preview). Open the page in its own Chrome tab, or type the answer.':'Speech error: '+e.error);};
+    rec.onend=function(){$('mic').classList.remove('rec');rec=null;};
+    rec.start();
+  }catch(e){$('mic').classList.remove('rec');rec=null;sys('Microphone is not available here. Type the answer instead.');}
+};
+
+// ---------- chat ui ----------
+function add(cls,text,tag){var d=document.createElement('div');d.className='msg '+cls;d.textContent=text;if(tag){var s=document.createElement('span');s.className='tag';s.textContent=tag;d.appendChild(s);}$('chat').appendChild(d);$('chat').scrollTop=1e9;}
+function bot(text,tag){add('bot',text,tag);speak(text);}
+function sys(text){add('sys',text);}
+function setStatus(t,live){$('phStatus').textContent=t;$('phStatus').className='status'+(live?' live':'');}
+function chips(list){
+  var c=$('chips');c.innerHTML='';
+  (list||[]).forEach(function(x){var b=document.createElement('button');b.className='chip'+(x.alt?' alt':'');b.textContent=x.t;b.onclick=function(){answer(x.v!==undefined?x.v:x.t,'');};c.appendChild(b);});
+}
+function enable(on){$('answer').disabled=!on;$('btnSend').disabled=!on;$('btnHang').disabled=!on;$('btnCall').disabled=on;if(on)$('answer').focus();}
+
+// ---------- ATS card ----------
+function renderAts(){
+  $('atsName').textContent=S.cand.first+' '+S.cand.last;
+  $('atsMeta').textContent='Candidate #'+S.cand.id+' · '+S.cand.phone+' · '+(S.mode==='A'?'module A · custom fields':'module C · campaign '+OFFER.id);
+  var t=$('fields');t.innerHTML='';
+  if(S.mode==='A'){
+    E.QUESTIONS.forEach(function(q,i){
+      var f=S.fields[q.id],tr=document.createElement('tr');
+      if(S.phase==='question'&&i===S.qi)tr.className='cur';
+      var v=f?(f.value===null?'<span class="empty">empty · 2 tries</span>':'<span class="val">'+esc(f.display)+'</span>'):'<span class="small">—</span>';
+      tr.innerHTML='<td>'+(i+1)+'. '+q.label+'</td><td>'+v+(f&&f.raw!==undefined?'<span class="raw">“'+esc(f.raw||'(silence)')+'”</span>':'')+'</td>';
+      t.appendChild(tr);
+    });
+  } else {
+    t.innerHTML='<tr><td>Offer</td><td><span class="val">'+OFFER.title+'</span><span class="raw">'+OFFER.place+' · '+OFFER.rate+' · start 5 Jan</span></td></tr>'+
+      '<tr><td>Campaign result</td><td>'+(S.fields.offer?'<span class="val">'+S.fields.offer.value+'</span><span class="raw">“'+esc(S.fields.offer.raw)+'”</span>':'<span class="small">—</span>')+'</td></tr>'+
+      (S.fields.reason?'<tr><td>Reason</td><td><span class="raw">“'+esc(S.fields.reason)+'”</span></td></tr>':'');
+  }
+  $('callResult').innerHTML=S.result?'Call result: <span class="result-badge">'+S.result+'</span>':'';
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+
+// ---------- mock REST API with retries + outbox ----------
+var outbox=[], seq=0;
+function logEntry(method,path,body,code,note){
+  var l=$('log');if(l.firstChild&&l.firstChild.className==='small')l.innerHTML='';
+  var d=document.createElement('div');d.className='e';
+  var time=new Date().toTimeString().slice(0,8);
+  d.innerHTML='<span class="small">'+time+'</span> <b class="m-'+method+'">'+method+'</b> '+esc(path)+' → <b class="'+(code===200?'c200':code==='queued'?'cQ':'c503')+'">'+code+'</b>'+(note?' <span class="small">'+esc(note)+'</span>':'')+'\n'+esc(JSON.stringify(body));
+  l.prepend(d);
+}
+function apiUp(){return !$('simApiDown').checked;}
+function send(method,path,body){
+  body=Object.assign({idempotency_key:'k'+(++seq)},body);
+  attempt({method:method,path:path,body:body},1);
+}
+function attempt(req,n){
+  if(apiUp()){logEntry(req.method,req.path,req.body,200,n>1?'attempt '+n:'');return;}
+  logEntry(req.method,req.path,req.body,503,'attempt '+n);
+  if(n<3){setTimeout(function(){attempt(req,n+1);},300*Math.pow(2,n));}
+  else{outbox.push(req);logEntry(req.method,req.path,req.body,'queued','held in outbox, will resend');renderOutbox();}
+}
+function renderOutbox(){$('outbox').textContent=outbox.length?outbox.length+' request(s) waiting in outbox — resent automatically when the API is back':'';}
+$('simApiDown').onchange=function(){$('apiPill').textContent='ATS API · '+(apiUp()?'online':'503 down');$('apiPill').className='api-pill'+(apiUp()?'':' down');};
+setInterval(function(){if(apiUp()&&outbox.length){var r=outbox.shift();logEntry(r.method,r.path,r.body,200,'resent from outbox (same idempotency key)');renderOutbox();}},1500);
+function apiField(id,value,raw,status){send('PATCH','/api/candidates/'+S.cand.id+'/custom-fields',{field:id,value:value,raw_answer:raw,status:status});}
+
+// ---------- call flow ----------
+function resetCall(){S.phase='idle';S.qi=0;S.tries=0;S.fields={};S.unanswered=[];S.faqUsed=[];S.notes=[];S.result=null;renderAts();}
+$('btnCall').onclick=function(){
+  resetCall();$('chat').innerHTML='';try{speechSynthesis.cancel();}catch(e){}
+  $('phWho').innerHTML='Calling '+esc(S.cand.first+' '+S.cand.last)+'<small>'+S.cand.phone+' · module '+S.mode+'</small>';
+  sys('Call request received from ATS · dialing…');setStatus('dialing');
+  setTimeout(function(){
+    if($('simNoAnswer').checked){sys('No answer after 30 s.');finish('no_answer','Brak odpowiedzi. Ponowienie zaplanowane za 2 h.');return;}
+    if($('simVoicemail').checked){
+      sys('Voicemail detected.');
+      bot('Dzień dobry, tu wirtualna asystentka agencji pracy Most. Dzwonimy w sprawie zgłoszenia do pracy. Zadzwonimy ponownie, a w razie pytań prosimy o kontakt z agencją.','voicemail · no personal data');
+      finish('voicemail','Poczta głosowa, zostawiono krótką wiadomość bez danych osobowych. Ponowienie jutro.');return;
+    }
+    setStatus('on call',true);enable(true);S.phase='identity';S.tries=0;
+    bot(fill('Dzień dobry, mówi Marta, wirtualna asystentka agencji pracy Most. Jestem programem AI, nie człowiekiem. Czy to {P} '+S.cand.first+' '+S.cand.last+'?'),'identity check · AI disclosure');
+    chips([{t:'tak, przy telefonie'},{t:'a kto mówi?'},{t:'pomyłka, to nie ja'},{t:'(silence)',v:'',alt:true}]);
+  },900);
+};
+$('btnSend').onclick=function(){answer($('answer').value,'');};
+$('answer').onkeydown=function(e){if(e.key==='Enter'){e.preventDefault();answer(this.value,'');}};
+$('btnHang').onclick=function(){if(S.phase==='ended'||S.phase==='idle')return;sys('Candidate hung up.');finish('call_dropped','Rozmowa przerwana przez kandydata. Zapisane odpowiedzi pozostają w ATS.');};
+
+function answer(text,src){
+  if(S.phase==='idle'||S.phase==='ended')return;
+  $('answer').value='';
+  text=String(text||'').trim();
+  if(text)add('me',text,src||'');else add('sys','(silence · 5 s)');
+  var ph=S.phase;
+  setTimeout(function(){
+    if(ph==='identity')return onIdentity(text);
+    if(text&&E.isQuestion(text)&&ph!=='offer_reason'&&handleQuestion(text))return;
+    if(ph==='question')return onQuestion(text);
+    if(ph==='offer')return onOffer(text);
+    if(ph==='offer_reason'){S.fields.reason=text||'(no reason given)';renderAts();send('POST','/api/candidates/'+S.cand.id+'/notes',{module:'C',campaign:OFFER.id,text:'Powód odmowy: '+(text||'brak')});bot(fill('Dziękuję, to dla nas cenna informacja. Odezwiemy się, gdy pojawi się lepiej dopasowana oferta. Do widzenia!'));finish('completed');}
+  },350);
+}
+
+function onIdentity(text){
+  if(!text){S.tries++;if(S.tries<2){bot(fill('Halo, czy mnie słychać? Czy to {P} '+S.cand.first+' '+S.cand.last+'?'));return;}bot('Nie słyszę odpowiedzi. Zadzwonię później. Do widzenia.');finish('no_contact','Cisza po potwierdzeniu tożsamości. Ponowienie zaplanowane.');return;}
+  var r=E.parseIdentity(text);
+  if(r.status==='who'){bot(fill('Dzwonię z agencji pracy Most w sprawie zgłoszenia do pracy w Niemczech. Czy to {P} '+S.cand.first+' '+S.cand.last+'?'),'explains, asks again');return;}
+  if(r.status==='unclear'){S.tries++;if(S.tries<2){bot(fill('Przepraszam, chcę się tylko upewnić: czy to {P} '+S.cand.first+' '+S.cand.last+'?'));return;}bot('Nie udało mi się potwierdzić rozmówcy. Zadzwonimy ponownie. Do widzenia.');finish('no_contact','Nie potwierdzono tożsamości.');return;}
+  if(r.value===false){bot('Przepraszam za pomyłkę. Życzę miłego dnia, do widzenia.');finish('wrong_person','Rozmówca to inna osoba. Numer do weryfikacji przez rekrutera.');return;}
+  S.tries=0;
+  if(S.mode==='A'){
+    bot(fill('Dziękuję. Mam jedenaście krótkich pytań, to potrwa około trzech minut. W każdej chwili może {P} też zapytać o warunki pracy.'));
+    S.phase='question';S.qi=0;askCurrent();
+  } else {
+    S.phase='offer';
+    bot(fill('Dziękuję. Dzwonię z nową ofertą pracy: '+OFFER.text+'. Czy jest {P} {zaint}?'),'module C · offer '+OFFER.id);
+    chips([{t:'tak, chętnie'},{t:'muszę pogadać z żoną'},{t:'nie, dziękuję'},{t:'a jak wygląda dojazd?'},{t:'(silence)',v:'',alt:true}]);
+  }
+}
+
+function askCurrent(prefix){
+  var q=E.QUESTIONS[S.qi];
+  bot((prefix||'')+fill(q.ask),'question '+(S.qi+1)+'/11 · '+q.id);
+  var ex=q.examples.map(function(t){return {t:t};});
+  ex.push({t:'a ile kosztuje zakwaterowanie?',alt:true},{t:'czy rozmawiam z robotem?',alt:true},{t:'(silence)',v:'',alt:true});
+  chips(ex);renderAts();
+}
+
+function handleQuestion(text){
+  var f=E.faqLookup(text);
+  var back=S.phase==='question'?fill('Wracając do pytania: '+lower(E.QUESTIONS[S.qi].ask)):fill('A wracając do oferty: czy jest {P} {zaint}?');
+  if(f){
+    S.faqUsed.push(f.id);
+    send('POST','/api/candidates/'+S.cand.id+'/notes',{type:'faq_answered',faq_id:f.id,question:text});
+    bot(fill(f.answer),'FAQ #'+f.id+' · '+f.topic);
+    setTimeout(function(){bot(back);},50);
+    return true;
+  }
+  S.unanswered.push(text);
+  bot(fill('Na to pytanie nie mam informacji w materiałach. Zapiszę je, a konsultant odpowie przy kolejnym kontakcie.'),'not in FAQ · logged for recruiter');
+  send('POST','/api/candidates/'+S.cand.id+'/notes',{type:'question_not_in_faq',question:text});
+  setTimeout(function(){bot(back);},50);
+  return true;
+}
+function lower(s){return s.charAt(0).toLowerCase()+s.slice(1);}
+
+function onQuestion(text){
+  var q=E.QUESTIONS[S.qi];
+  var r=text?E.normalize(q.id,text,TODAY):{status:'silence'};
+  if(r.status==='ok'){
+    S.fields[q.id]={value:r.value,display:r.display,raw:text};
+    apiField(q.id,r.value,text,'ok');
+    S.tries=0;next('Zapisuję: '+(r.spoken||r.display)+'. ');
+    return;
+  }
+  S.tries++;
+  if(S.tries<2){
+    bot(r.status==='silence'?fill('Halo, czy mnie słychać? '+q.ask):fill(r.reprompt||q.reprompt),r.status==='silence'?'silence · try 2/2':'unclear · try 2/2');
+    return;
+  }
+  S.fields[q.id]={value:null,display:'',raw:text};
+  S.notes.push(q.label+': brak jasnej odpowiedzi po 2 próbach'+(text?' (ostatnio: „'+text+'”)':' (cisza)'));
+  apiField(q.id,null,text,'empty_after_2_tries');
+  S.tries=0;next('Nie szkodzi, przejdźmy dalej. ');
+}
+function next(prefix){
+  S.qi++;
+  if(S.qi<E.QUESTIONS.length){askCurrent(prefix);return;}
+  bot(prefix+fill('To wszystkie pytania, dziękuję. Konsultant odezwie się do {Pg} w ciągu dwóch dni roboczych. Do widzenia!'));
+  finish('completed');
+}
+function onOffer(text){
+  var r=text?E.parseOffer(text):{status:'silence'};
+  if(r.status!=='ok'){
+    S.tries++;
+    if(S.tries<2){bot(fill(r.status==='silence'?'Halo, czy mnie słychać? Czy oferta {Pg} interesuje?':'Czy mam rozumieć, że jest {P} {zaint}, czy raczej nie?'));return;}
+    r={status:'ok',value:'no_decision'};
+  }
+  S.fields.offer={value:r.value,raw:text||'(silence)'};
+  send('POST','/api/campaigns/'+OFFER.id+'/results',{candidate_id:S.cand.id,result:r.value,raw_answer:text});
+  renderAts();
+  if(r.value==='interested'){bot(fill('Świetnie! Przekażę to konsultantowi, odezwie się dziś lub jutro ze szczegółami. Do widzenia!'));finish('completed');}
+  else if(r.value==='no_decision'){bot(fill('Rozumiem, to ważna decyzja. Zadzwonimy ponownie za dwa dni. Do widzenia!'));finish('completed');}
+  else{S.phase='offer_reason';bot('Rozumiem. Czy mogę zapytać, co w tej ofercie nie pasuje? To pomoże nam dobrać lepszą.');chips([{t:'za daleko od Polski'},{t:'stawka za niska'},{t:'nie chcę mówić',v:'nie chcę mówić'}]);}
+}
+
+function finish(result,extra){
+  S.phase='ended';S.result=result;enable(false);chips([]);setStatus('ended');
+  var filled=Object.keys(S.fields).filter(function(k){return S.fields[k]&&S.fields[k].value!==null&&k!=='reason';}).length;
+  var note=[ 'Rozmowa AI, moduł '+S.mode+', wynik: '+result ];
+  if(S.mode==='A'&&result!=='no_answer'&&result!=='voicemail')note.push('Pola: '+filled+'/11');
+  if(extra)note.push(extra);
+  S.notes.forEach(function(n){note.push(n);});
+  if(S.faqUsed.length)note.push('Odpowiedzi z FAQ: #'+S.faqUsed.join(', #'));
+  S.unanswered.forEach(function(u){note.push('Pytanie spoza FAQ: „'+u+'”');});
+  send('PATCH','/api/candidates/'+S.cand.id+'/call-result',{module:S.mode,result:result});
+  send('POST','/api/candidates/'+S.cand.id+'/notes',{type:'call_note',text:note.join(' · ')});
+  sys('Call ended · '+result);renderAts();
+}
+
+// ---------- playground ----------
+E.QUESTIONS.forEach(function(q){var o=document.createElement('option');o.value=q.id;o.textContent=q.label+' ('+q.id+')';$('pgField').appendChild(o);});
+function pgRun(){
+  var q=E.QUESTIONS.filter(function(x){return x.id===$('pgField').value;})[0];
+  $('pgAllowed').innerHTML='Allowed values: <code>'+esc(q.allowed)+'</code>';
+  var ex=$('pgEx');ex.innerHTML='';
+  q.examples.forEach(function(t){var b=document.createElement('button');b.className='chip';b.style.cssText='color:var(--ink);border-color:var(--line)';b.textContent=t;b.onclick=function(){$('pgText').value=t;pgOut();};ex.appendChild(b);});
+  pgOut();
+}
+function pgOut(){
+  var txt=$('pgText').value;
+  if(!txt.trim()){$('pgOut').textContent='{ }';return;}
+  var r=E.normalize($('pgField').value,txt,TODAY);
+  var o={field:$('pgField').value,raw_answer:txt,status:r.status};
+  if(r.status==='ok'){o.value=r.value;o.bot_reads_back='Zapisuję: '+(r.spoken||r.display);}
+  else o.bot_reprompts=r.reprompt||'(field-specific reprompt, then empty after 2 tries)';
+  $('pgOut').textContent=JSON.stringify(o,null,2);
+}
+$('pgField').onchange=pgRun;$('pgText').oninput=pgOut;pgRun();
+
+// ---------- tests ----------
+(function(){
+  var cases=window.VBCases,base=E.mk(2026,11,20),pass=0,rows='<tr><th>#</th><th>Field</th><th>Candidate said</th><th>Expected</th><th>Got</th><th></th></tr>';
+  cases.forEach(function(c,i){
+    var r=E.normalize(c[0],c[1],base),got=r.status==='ok'?r.value:null,ok=JSON.stringify(got)===JSON.stringify(c[2]);if(ok)pass++;
+    function f(v){return v===null?'<i>unclear → reprompt</i>':Array.isArray(v)?(v.length?v.join(', '):'brak'):esc(v);}
+    rows+='<tr><td class="small">'+(i+1)+'</td><td><code>'+c[0]+'</code></td><td>“'+esc(c[1])+'”</td><td>'+f(c[2])+'</td><td>'+f(got)+'</td><td class="'+(ok?'pass':'failc')+'">'+(ok?'✓':'✗')+'</td></tr>';
+  });
+  $('tests').innerHTML=rows;$('score').textContent=pass+' / '+cases.length+' passed';
+})();
+
+renderAts();
+})();
+</script>
+</body>
+</html>

@@ -1,46 +1,53 @@
-# Polish Recruitment Voicebot — working demo
+# Polish screening-call voicebot with ATS write-back (demo)
 
 **Live demo:** https://jabloniec8372-cpu.github.io/polish-voicebot-demo/
 
-An outbound screening-call voicebot for a recruitment agency that places Polish candidates in jobs in Germany. The bot speaks Polish, and every answer ends up as a fixed value in the ATS.
+A working browser demo of an outbound Polish-language recruitment voicebot for a staffing agency (fictional agency "Most", fictional candidates). It runs entirely in the browser: Web Speech API for Polish TTS/ASR, a deterministic answer normalizer, and a mock REST API that shows every write to the ATS.
 
-The agency ("Most"), the candidates and the ATS API are fictional. The dialogue logic, the answer normalizer and the error handling are real and tested.
+> Best in Chrome. For the microphone, open the page in its own tab. You can also type answers or click the suggested replies.
 
-## What it does
+## What the call handles
 
-| Module | Behaviour |
-|---|---|
-| **A · Screening call** | Says it is an AI assistant, confirms the right person, asks 11 questions, maps each free answer to an allowed value and saves it to custom fields right away |
-| **B · FAQ** | Answers candidate questions during A and C **only from the FAQ table**, shows the entry used, returns to the open question. Questions outside the FAQ are logged for the recruiter, never improvised |
-| **C · Job offer** | Presents one offer and saves `interested` / `not_interested` / `no_decision` ("muszę pogadać z żoną" is *no decision*, not a no); asks for the reason on a no |
+**Opening and identity**
+- AI disclosure in the first sentence, identity check by name
+- "A kto mówi?" answered differently each time, then a closed yes/no question
+- A family member answers: no details disclosed to third parties, hold ("zaraz zawołam tatę"), re-introduction when the candidate comes to the phone, callback time if absent, wrong number
+- "Skąd macie mój numer?" answered from the lead source stored in the ATS, with a GDPR note
 
-### Free Polish answers → fixed values
+**Module A: 11 screening questions → ATS custom fields**
+- Normalizes free Polish speech into allowed values: dates ("od następnego tygodnia", "po świętach", "15-tego", notice periods, "4 grudnia mi nie pasuje, 9 grudnia"), licence categories ("be i ce", "dwójka" → confirm C), German level, forklift licences, experience bands, shifts, car, accommodation, region, contract length, ID document
+- Handles fillers, self-corrections, negations and conditional answers (stored with a constraint note)
+- Smart skip: an answer that already covers a later question is saved and the question is not asked again
+- Corrections of earlier answers at any point, with the previous value kept in history
+- Unclear answers: 2 tries, then left empty; empty fields are revisited once at the end
+- Spoken summary at the end; the candidate can correct anything before the call closes
 
-| Candidate says | Saved as |
-|---|---|
-| „od następnego tygodnia”, „po świętach”, „od piętnastego stycznia” | ISO date relative to today |
-| „jeżdżę na tira”, „B i C+E”, „be i ce”, „prawko na osobówkę” | `["C+E"]`, `["B","C+E"]`, `["B","C"]`, `["B"]` |
-| „2 WJO”, „dwójkę WJO”, „Staplerschein” | `II WJO`, `II WJO`, `Staplerschein (DE)` |
-| „dogadam się”, „mam B1”, „kilka słów” | German level bands |
-| „półtora roku”, „pół roku”, „kilka lat” | experience band, or a follow-up question when vague |
-| „bez nocek”, „wolę dzień” | `tylko dzienne` |
+**FAQ during the call**
+- Answers only from the agency's FAQ table (pay, netto/brutto and tax classes, accommodation, transport, contract, etc.), up to two topics per question
+- An answer and a question in one sentence: the answer is saved and the question answered
+- Same question repeated: short form the second time, a note for the recruiter the third time
+- Questions outside the FAQ are logged for the recruiter, never invented
 
-### Errors handled
+**Module C: offer campaign**
+- Presents a concrete offer; one rebuttal per objection (salary, location, accommodation, timing), no pushing
+- A refusal with a stated reason gets no exit poll; no decision → SMS summary + follow-up time
+- Outcome `interested_alternative` when the candidate wants something closer to Poland
 
-- no answer and voicemail (short message, no personal data), saved as call results for retry
-- wrong person, "who is calling?", silence
-- unclear answer: a different reprompt, then after **2 tries** the field stays empty and the call note says why
-- candidate hangs up: answers already collected are kept (each one is saved immediately)
-- **ATS API down (503)**: retries with backoff, then holds requests in an outbox and resends them with the same idempotency key when the API is back
+**Global intents in every phase**
+Busy / callback time, "proszę poczekać" (bot waits and resumes), repeat, explain, talk to a human (one offer to finish, then handoff), opt-out / GDPR erasure, "już znalazłem pracę", abusive caller (polite close).
+
+**Persona** follows the browser voice: female voice → "Marta", male voice → "Karol", with Polish grammar switched accordingly.
+
+## ATS integration (mock)
+- `PATCH /api/candidates/{id}/custom-fields` per answer, with raw answer and status
+- Notes, call result, consent changes, campaign results, SMS requests
+- Idempotency keys, retry with backoff on 503, outbox that resends when the API is back (toggle "ATS API down")
+- One final JSON record per call: `call_id`, answers with verbatim and source (direct / smart skip / correction), constraints, correction history, verification flags, recruiter note
 
 ## Files
+- `engine.js`: normalizer, intents, FAQ, questions (no DOM, testable in Node)
+- `app.js`: call state machine, UI, mock API, JSON record
+- `cases.js`, `test.js`: 158 normalizer test cases (`node test.js`)
+- `index.html`: the page
 
-- `index.html` — the demo UI (call simulator, normalizer playground, test suite)
-- `engine.js` — dependency-free normalizer, identity/offer parsing, FAQ matcher
-- `cases.js` — test cases (base date 2026-11-20)
-- `test.js` — run with `node test.js`
-
-Voice uses the browser's Web Speech API (pl-PL); the microphone works in Chrome on the live page. In production the same flow, value mapping and error handling are built on the voice platform's telephony, ASR/TTS and HTTP integration blocks.
-
----
-Built by Tomasz Dembinski — Python automation, bots and API integrations.
+In production the same logic sits behind a telephony provider (SIP/WebRTC, streaming ASR/TTS) and the agency's real ATS REST API.

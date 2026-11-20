@@ -91,14 +91,47 @@
     var diff = (wd - today.getUTCDay() + 7) % 7;
     return addDays(today, diff === 0 ? 7 : diff);
   }
+  function workday(dt) { var wd = dt.getUTCDay(); return wd === 6 ? addDays(dt, 2) : wd === 0 ? addDays(dt, 1) : dt; }
   function dateResult(dt, how) {
     var d = dt.getUTCDate(), m = dt.getUTCMonth() + 1, y = dt.getUTCFullYear();
     return { status: 'ok', value: iso(dt), display: d + ' ' + MONTH_GEN[m] + ' ' + y,
       spoken: how === 'od zaraz' ? 'od zaraz' : how === 'od jutra' ? 'od jutra' : ordinalSpoken(d) + ' ' + MONTH_GEN[m], how: how };
   }
   function parseStartDate(t, today) {
+    // "od 15-tego, ale najlepiej po Nowym Roku" -> earliest + preferred
+    // "zalezy czy... czy...", "nic nie obiecuje" -> flexible, nothing to save yet
+    if (has(t, /\b(trudno powiedziec|zalezy (czy|od tego|kiedy)|nic nie obiecuje|nie wiem jeszcze kiedy)\b/) && !has(t, /\bna pewno\b/)) return { status: 'unclear' };
+    // "od pierwszego grudnia nie dam rady, ale od pietnastego jak najbardziej" -> the clause after "ale"
+    var neg = t.match(/^(.*?\b(nie dam rady|nie moge|nie da sie|odpada|nie wchodzi w gre|nie pasuje)\b.*?)\bale\b(.*)$/) || t.match(/^(.*?)\b(nie dam rady|nie moge|nie da sie|odpada|nie wchodzi w gre|nie pasuje)\b( .*)$/);
+    if (neg && neg[3].trim()) { var rn = parseStartDate(neg[3].replace(/^\s*(mi|mnie|wtedy|tylko|lepiej|raczej|a)\b\s*/, '').trim(), today); if (rn.status === 'ok') return rn; }
+    var two = t.match(/^(.*?)\b(?:ale |a )?(?:najlepiej|najchetniej|wolal\w*|wole|chetniej|idealnie)\b(.*)$/);
+    if (two && two[1].trim() && two[2].trim()) {
+      var a = parseStartDate(two[1].replace(/\bale\b.*$/, '').trim() || two[1].trim(), today), b = parseStartDate1(two[2].trim(), today);
+      if (a.status === 'ok' && b.status === 'ok' && a.value !== b.value) {
+        a.preferred = b.value; a.display += ' (preferowany: ' + b.display + ')'; a.spoken += ', a najlepiej ' + b.spoken; return a;
+      }
+      if (a.status === 'ok') return a; if (b.status === 'ok') return b;
+    }
+    // notice period: "wypowiedzenie do piatego grudnia" -> next working day after it
+    var nd2 = t.match(/\bdo (\d{1,2}|\w+ego)(?: (\w+))?\b/);
+    if (nd2 && has(t, /\b(wypowiedzen\w*|umow\w*|zobowiazan\w*|pracuje|kontrakt\w*)\b/)) {
+      var dday = /^\d+$/.test(nd2[1]) ? +nd2[1] : dayFromWords(nd2[1]), dmon = null;
+      for (var di = 0; di < MONTHS.length; di++) if (nd2[2] && MONTHS[di][0].test(nd2[2])) dmon = MONTHS[di][1];
+      if (dday && dmon) { var r0 = dateResult(workday(addDays(upcoming(today, dmon, dday), 1)), 'po wypowiedzeniu'); r0.notice_until = iso(upcoming(today, dmon, dday)); return r0; }
+    }
+    var until = t.match(/\bdo (?:konca )?(\w+)/);
+    if (until && has(t, /\b(zobowiazan\w*|pracuje|umow\w*|wypowiedzen\w*|zajety|zajeta|robie|jestem|mam)\b/)) {
+      for (var ui = 0; ui < MONTHS.length; ui++) if (MONTHS[ui][0].test(until[1])) {
+        var nm = MONTHS[ui][1] % 12 + 1; return dateResult(upcoming(today, nm, 1), 'po zobowiązaniach');
+      }
+    }
+    return parseStartDate1(t, today);
+  }
+  function parseStartDate1(t, today) {
+    if (has(t, /\bpo majowce\b|\bpo majowym\b/)) return dateResult(workday(upcoming(today, 5, 4)), 'po majówce');
+    if (has(t, /\bpo (wielkanocy|swietach wielkanocnych|wielkiej nocy)\b/)) return dateResult(upcoming(today, 3, 30), 'po Wielkanocy');
     if (has(t, /\bpo (trzech|3) krol\w*/)) return dateResult(upcoming(today, 1, 7), 'po Trzech Królach');
-    if (has(t, /\bpo swietach\b/)) return dateResult(upcoming(today, 12, 27), 'po świętach');
+    if (has(t, /\bpo (drugim dniu )?swi[ae]t\w*|\bpo bozym narodzeniu\b/)) return dateResult(workday(upcoming(today, 12, 27)), 'po świętach');
     if (has(t, /\b(przyszl\w*|nastepn\w*) (tydz\w*|tygod\w*)/)) return dateResult(nextWeekday(today, 1), 'przyszły tydzień');
     if (has(t, /\bw ciagu tygodnia\b/)) return dateResult(addDays(today, 7), 'w ciągu tygodnia');
     if (has(t, /\b(od zaraz|od razu|od dzis\w*|natychmiast|w kazdej chwili|teraz|najszybciej|jak najszybciej|asap|choc\w* dzis|jak tylko sie da|kiedy (pani|pan) chce|kiedy trzeba|w kazdej chwili)\b/)) return dateResult(today, 'od zaraz');
@@ -106,7 +139,7 @@
     for (var si = 0; si < SEASONS.length; si++) if (SEASONS[si][0].test(t) && !has(t, /\blat\b|\b\d+ lata\b/)) return dateResult(upcoming(today, SEASONS[si][1], 1), 'pora roku');
     if (has(t, /\bpojutrze\b/)) return dateResult(addDays(today, 2), 'pojutrze');
     if (has(t, /\bjutr\w*/)) return dateResult(addDays(today, 1), 'od jutra');
-    if (has(t, /\b(nowego roku|nowym roku)\b/)) return dateResult(upcoming(today, 1, has(t, /\bpo\b/) ? 2 : 1), 'nowy rok');
+    if (has(t, /\b(nowego roku|nowym roku)\b/)) return dateResult(has(t, /\bpo\b/) ? workday(upcoming(today, 1, 2)) : upcoming(today, 1, 1), 'nowy rok');
     var weeks = numberBefore(t, 'tygodni\\w*|tygodnie');
     if (has(t, /\bza tydzien\b/)) weeks = 1;
     if (weeks && has(t, /\bza\b/)) return dateResult(addDays(today, Math.round(weeks * 7)), 'za ' + weeks + ' tyg.');
@@ -135,14 +168,15 @@
       if (has(t, /\b(koniec|konca|koncem|koncowk\w*)\b/)) return dateResult(mk(by, bm, lastDay(by, bm)), 'koniec miesiąca');
       var day = null, dm = t.match(/\b(\d{1,2})\b/);
       if (dm) day = +dm[1]; else day = dayFromWords(t);
-      if (day && month) return dateResult(upcoming(today, month, day), 'dzień + miesiąc');
+      if (day && month) { var dm0 = upcoming(today, month, day); return has(t, /^po\b|\bdopiero po\b/) ? dateResult(workday(addDays(dm0, 1)), 'po dacie') : dateResult(dm0, 'dzień + miesiąc'); }
       if (has(t, /\bza miesiac\b/)) return dateResult(addDays(today, 30), 'za miesiąc');
       return dateResult(base, month ? 'początek miesiąca' : 'od przyszłego miesiąca');
     }
     for (var w = 0; w < WEEKDAYS.length; w++) if (WEEKDAYS[w][0].test(t)) return dateResult(nextWeekday(today, WEEKDAYS[w][1]), 'dzień tygodnia');
     // day only: "od pierwszego", "od 15", "od dziesiatego" -> next such day
-    var dOnly = null, dn = t.match(/^(od )?(\d{1,2})(-go|go)?$/);
-    if (dn) dOnly = +dn[2]; else if (/^(od )?\w+$/.test(t) || /^od \w+( \w+)?$/.test(t)) dOnly = dayFromWords(t);
+    var td = t.replace(/^(moge|moglbym|moglabym|zaczne|bede mogl\w*|jade|wyjade|jestem gotow\w*)( (jechac|wyjechac|zaczac|startowac|pracowac))?\s*/, '');
+    var dOnly = null, dn = td.match(/^(od )?(\d{1,2})(-?(go|ego|tego|ty|tym))?$/);
+    if (dn) dOnly = +dn[2]; else if (/^(od )?\w+$/.test(td) || /^od \w+( \w+)?$/.test(td)) dOnly = dayFromWords(td);
     if (dOnly && dOnly <= 31) {
       var cy = today.getUTCFullYear(), cm = today.getUTCMonth() + 1;
       var cand = mk(cy, cm, Math.min(dOnly, lastDay(cy, cm)));
@@ -177,25 +211,41 @@
     var s = ' ' + t + ' ';
     if (/\bCE\b/.test(original || '')) s = s.replace(/\bce\b/g, ' c+e ');
     if (/\bBE\b/.test(original || '')) s = s.replace(/\bbe\b/g, ' b+e ');
-    s = s.replace(/\btir\w*/g, ' c+e ').replace(/\bosobow\w*/g, ' b ').replace(/\bna ciezarow\w*/g, ' c ')
+    s = s.replace(/\btir\w*/g, ' c+e ').replace(/\bautobus\w*/g, ' d ').replace(/\bosobow\w*/g, ' b ').replace(/\bna ciezarow\w*/g, ' c ')
       .replace(/\b(ce|c)\s*(plus|\+)\s*e\b|\bc\s+e\b/g, ' c+e ')
       .replace(/\b(be|b)\s*(plus|\+)\s*e\b/g, ' b+e ')
       .replace(/\b(ce|c) jeden\b|\bc 1\b/g, ' c1 ')
       .replace(/\bbe\b/g, ' b ').replace(/\bde\b/g, ' d ').replace(/\bce\b/g, ' c ');
+    // drop clauses where the category is expired / taken away ("B mam, C juz nieaktualne")
+    s = s.replace(/(?:^|\s)(b\+e|c\+e|c1|b|c|d|t)((?:\s+\w+){0,2})\s+(nieaktualn\w*|niewazn\w*|wygasl\w*|zabral\w*|zabrali|odebral\w*|stracil\w*|zatrzymal\w*)/g, ' ')
+         .replace(/(stracil\w*|zabrali mi|odebrali mi|zatrzymali mi)\s+(?:\w+\s+)?(b\+e|c\+e|c1|b|c|d|t)(?=\s|$)/g, ' ');
     var found = {};
     var re = /(?:^|\s)(b\+e|c\+e|c1|b|c|d|t)(?=\s|$|,)/g, m;
     while ((m = re.exec(s))) found[m[1].toUpperCase()] = true;
+    var declared = LICENCE_ORDER.filter(function (k) { return found[k]; });
+    // a higher category implies the lower ones it requires (C+E -> C, B ; C/C1/D/B+E -> B)
+    if (found['C+E']) { found.C = true; found.B = true; }
+    if (found.C || found.C1 || found.D || found['B+E']) found.B = true;
     var list = LICENCE_ORDER.filter(function (k) { return found[k]; });
+    if (!list.length && has(t, /\bdwojk\w*|\bdwojecz\w*/)) return { status: 'unclear', pending: { value: ['B', 'C'], display: 'C (+ B)', spoken: 'C' }, reprompt: 'Czy dwójka to u {Pg} kategoria C, na ciężarówki?' };
     if (!list.length) return { status: 'unclear', reprompt: has(t, /\b(mam|tak|prawo jazdy|prawko)\b/) ? 'A jakie to kategorie? Na przykład B albo C plus E.' : undefined };
-    return { status: 'ok', value: list, display: list.join(', '), spoken: list.join(', ').replace(/\+/g, ' plus ') };
+    if (!declared.length) declared = list;
+    var implied = list.filter(function (k) { return declared.indexOf(k) < 0; });
+    return { status: 'ok', value: list, display: declared.join(', ') + (implied.length ? ' (+ ' + implied.join(', ') + ')' : ''), spoken: declared.join(', ').replace(/\+/g, ' plus ') };
   }
 
   var GERMAN = ['brak', 'podstawowy (A1-A2)', 'komunikatywny (B1)', 'dobry (B2)', 'biegły (C1-C2)'];
   function parseGerman(t) {
+    if (has(t, /\b(maz|mez\w*|zona|zon\w*|syn\w*|corka|brat|siostra|kolega|kuzyn\w*)\b/)) {
+      var mine = t.match(/\bja\b(.*)$/);
+      if (mine && mine[1].trim()) t = mine[1].trim();
+      else return { status: 'unclear', reprompt: 'A jak ocenia {P} swój własny niemiecki?' };
+    }
     var cefr = t.match(/\b([abc])\s?([12])\b/);
     if (cefr) {
       var k = cefr[1] + cefr[2];
       var map = { a1: 1, a2: 1, b1: 2, b2: 3, c1: 4, c2: 4 };
+      if (map[k] < 2 && has(t, /\b(dogadam sie|dogaduje sie|dam rade|komunikatywn\w*|wszystko sie dogadam)\b/)) { var v = lvl(2); v.verify = true; return v; }
       return lvl(map[k]);
     }
     if (has(t, /\b(nie znam|nie mowie|wcale|zero|ani slowa|nic|nie umiem)\b/) && !has(t, /\btroche|podstaw|kilka/)) return lvl(0);
@@ -251,11 +301,16 @@
     if (years === null && months === null && has(t, /\b(kilka|pare) miesiec\w*/)) months = 3;
     if (years === null && months !== null) years = months / 12;
     if (years !== null && has(t, /\b(prawie|niecaly|niecale|nie cale)\b/)) years -= 0.1;
+    var bare = t.match(/^(?:\D*?\b)?(\d{1,2})(?:\s*(?:albo|lub|czy|-|do)\s*(\d{1,2}))?\b/);
+    if (years === null && months === null && bare && !has(t, /\b(miesiac\w*|tydz\w*|tygod\w*)\b/)) {
+      var yv = +(bare[2] || bare[1]);
+      if (yv >= 1 && yv <= 45) { var pv = yv <= 3 ? e(2) : e(3); return { status: 'unclear', pending: pv, reprompt: 'Czy chodzi o ' + (bare[2] ? bare[1] + ' albo ' + bare[2] : bare[1]) + ' lata pracy na magazynie?' }; }
+    }
     if (years === null) return { status: 'unclear', reprompt: has(t, /\b(tak|troche|mam)\b/) ? 'A ile to mniej więcej lat lub miesięcy?' : undefined };
     if (years < 1) return e(1);
     if (years <= 3) return e(2);
     return e(3);
-    function e(i) { return { status: 'ok', value: EXP[i], display: EXP[i] }; }
+    function e(i) { return { status: 'ok', value: EXP[i], display: EXP[i], spoken: ['brak doświadczenia', 'do roku', 'od roku do trzech lat', 'ponad trzy lata'][i] }; }
   }
 
   function parseShift(t) {
@@ -295,15 +350,16 @@
     if (!out.length) return { status: 'unclear' };
     return { status: 'ok', value: out, display: out.join(', ') };
   }
-  var DUR = ['do 3 miesięcy', '3-6 miesięcy', 'powyżej 6 miesięcy', 'na stałe'];
+  var DUR = ['do 3 miesięcy', '3-6 miesięcy', '6-12 miesięcy', 'powyżej roku', 'na stałe'];
   function parseDuration(t) {
-    if (has(t, /\b(na stale|na zawsze|na dobre|zostac na stale|przeprowadz\w*)\b/)) return d(3);
-    if ((has(t, /\b(na )?dluzej\b|\bdlugo\b|\bile sie da\b|\bjak najdluzej\b/)) && !has(t, /\d|miesiac|rok/)) return d(2);
+    if (has(t, /\b(na stale|na zawsze|na dobre|zostac na stale|przeprowadz\w*)\b/)) return d(4);
+    if (has(t, /\b(ponad|powyzej|dluzej niz|wiecej niz) (rok|roku)\b|\b(rok|roku)\b.*\b(dluzej|wiecej|albo dwa|lub dwa)\b|\b(dwa|2|kilka|pare) lat\w*/)) return d(3);
+    if ((has(t, /\b(na )?dluzej\b|\bdlugo\b|\bile sie da\b|\bjak najdluzej\b/)) && !has(t, /\d|miesiac|rok/)) return d(3);
     if (has(t, /\bpol roku\b/)) return d(1);
     if (has(t, /\bdo (konca )?\w+/)) {
       for (var mi = 0; mi < MONTHS.length; mi++) if (MONTHS[mi][0].test(t)) {
         var now = new Date(), diff = (MONTHS[mi][1] - (now.getUTCMonth() + 1) + 12) % 12 || 12;
-        return diff <= 3 ? d(0) : diff <= 6 ? d(1) : d(2);
+        return diff <= 3 ? d(0) : diff <= 6 ? d(1) : d(2);  // within 12 months
       }
     }
     var months = numberBefore(t, 'miesiac\\w*|miesiecy|miesiace');
@@ -317,8 +373,9 @@
     }
     if (months <= 3) return d(0);
     if (months <= 6) return d(1);
-    return d(2);
-    function d(i) { return { status: 'ok', value: DUR[i], display: DUR[i] }; }
+    if (months <= 12) return d(2);
+    return d(3);
+    function d(i) { return { status: 'ok', value: DUR[i], display: DUR[i], spoken: ['do trzech miesięcy', 'od trzech do sześciu miesięcy', 'od pół roku do roku', 'ponad rok', 'na stałe'][i] }; }
   }
 
   // ---------- identity & offer ----------
@@ -336,7 +393,17 @@
     return r === null ? { status: 'unclear' } : { status: 'ok', value: r };
   }
   var text0 = '';
+  function offerObjection(s) {
+    var t = clean(deaccent(s));
+    if (has(t, /\b(troche malo|malo jak na|za malo|malo placa|malo placicie|niska stawka|stawka (jest )?(za )?nisk\w*|za tanio|nie oplaca|nieoplacaln\w*|wiecej bym chcial\w*|za te pieniadze)\b/)) return 'SALARY';
+    if (has(t, /\b(za daleko|daleko|blizej (polski|granicy|domu)|kawal drogi)\b/)) return 'LOCATION';
+    if (has(t, /\b(w czterech|w trzech|ile osob|jakie (mieszkanie|pokoje)|warunki mieszkaniowe|standard)\b/)) return 'ACCOMMODATION';
+    if (has(t, /\b(moge dopiero|dopiero (od|za|w|po)|za wczesnie|za pozno|nie zdaze)\b/)) return 'TIMING';
+    return null;
+  }
   function parseOffer(t) {
+    if (has(t, /\b(przegada\w*|pogada\w*|porozmawia\w*|obgada\w*|zapyta\w*)\b.*\b(zon\w*|mez\w*|rodzin\w*|partner\w*)\b|\b(zon\w*|mez\w*|rodzin\w*)\b.*\b(przegada\w*|pogada\w*|porozmawia\w*|obgada\w*)\b/))
+      return { status: 'ok', value: 'no_decision', display: 'brak decyzji', reason: 'FAMILY_CONSULTATION', sms: has(t, /\bsms\w*/) };
     if (has(t, /\b(zastanow\w*|pomysl\w*|oddzwonie|musze (zapytac|pogadac|porozmawiac|sprawdzic)|nie wiem|nie jestem pewn\w*|zalezy|moze|dam znac|przemysl\w*)\b/))
       return { status: 'ok', value: 'no_decision', display: 'brak decyzji' };
     if (has(t, /\b(nie interesuje|nie jestem zainteresowan\w*|nie dziekuje|raczej nie|nie chce|nie pasuje|nie)\b/) && !has(t, /\bnie ma problemu\b/))
@@ -349,15 +416,20 @@
 
   // ---------- FAQ (module B) ----------
   var FAQ = [
-    { id: 1, topic: 'Zakwaterowanie', keys: ['zakwaterowan', 'mieszkani', 'pokoj', 'nocleg', 'kwater', 'gdzie bede mieszkac', 'gdzie sie mieszka'],
+    { id: 1, topic: 'Zakwaterowanie', keys: ['od ceny', 'za darmo', 'darmow', 'zakwaterowan', 'mieszkani', 'pokoj', 'nocleg', 'kwater', 'gdzie bede mieszkac', 'gdzie sie mieszka'],
       answer: 'Zakwaterowanie zapewnia agencja, w pokojach dwuosobowych. Koszt to 280 euro miesięcznie i jest potrącany z wypłaty.' },
-    { id: 2, topic: 'Stawki', keys: ['stawk', 'zarob', 'ile plac', 'placa', 'placicie', 'placi sie', 'kasa', 'ile dostane', 'ile sie zarabia', 'pensj', 'wynagrodz', 'na reke', 'brutto', 'netto', 'za godzine'],
+    { id: 2, topic: 'Stawki', keys: ['stawk', 'zarob', 'ile plac', 'placa', 'placicie', 'placi sie', 'kasa', 'ile dostane', 'ile sie zarabia', 'pensj', 'wynagrodz', 'za godzine'],
       answer: 'Stawki zależą od oferty. Zwykle jest to od 14 do 17 euro brutto za godzinę, plus dodatki za nadgodziny i nocki.' },
     { id: 3, topic: 'Dojazd', keys: ['dojazd', 'dojech', 'transport', 'bus', 'podroz', 'bilet', 'jak sie dostan', 'przejazd'],
       answer: 'Na pierwszy wyjazd organizujemy busa z Polski. Koszt przejazdu zwracamy po trzech miesiącach pracy.' },
-    { id: 4, topic: 'Umowa', keys: ['umow', 'kontrakt', 'ubezpiecz', 'emerytaln', 'na czarno', 'legaln'],
-      answer: 'Umowa jest niemiecka, z niemieckim ubezpieczeniem zdrowotnym i emerytalnym.' },
-    { id: 5, topic: 'Wypłata', keys: ['wyplat', 'kiedy pieniadze', 'kiedy kasa', 'zaliczk', 'przelew', 'kiedy placa'],
+    { id: 4, topic: 'Umowa', keys: ['umow', 'kontrakt', 'ubezpiecz', 'emerytaln', 'na czarno', 'legaln', 'gewerb', 'dzialalnosc', 'delegow', 'a1 '],
+      answer: 'Umowa jest niemiecka, z niemieckim ubezpieczeniem zdrowotnym i emerytalnym. Nie trzeba zakładać działalności ani Gewerbe.' },
+    { id: 11, topic: 'Brutto i netto', keys: ['netto', 'brutto a', 'na reke', 'na czysto', 'klas', 'podatk', 'steuerklass', 'ile zostaje', 'ile wychodzi', 'co to brutto', 'co to netto'],
+      answer: 'Brutto to stawka przed podatkiem i składkami, a netto to kwota, która zostaje na rękę. W Niemczech zależy to od klasy podatkowej: osoba samotna ma zwykle pierwszą klasę, a małżonkowie mogą wybrać trzecią i piątą. Orientacyjnie przy piętnastu euro brutto w pierwszej klasie zostaje około dziesięciu, jedenastu euro na rękę za godzinę. Dokładną kwotę wyliczy rekruter.',
+      short: 'na rękę zostaje orientacyjnie około dziesięciu, jedenastu euro za godzinę, przy pierwszej klasie podatkowej. Dokładnie wyliczy to rekruter.' },
+    { id: 10, topic: 'Zjazdy', keys: ['zjazd', 'zjezdz', 'rotacj', '3 na 1', 'trzy na jeden', 'ile tygodni', 'co weekend', 'do domu'],
+      answer: 'Najczęściej są to trzy lub cztery tygodnie pracy i tydzień w domu. Są też oferty ze zjazdami co dwa tygodnie.' },
+    { id: 5, topic: 'Wypłata', keys: ['wyplat', 'kiedy pieniadze', 'kiedy kasa', 'zaliczk', 'po tygodniu', 'przelew', 'kiedy placa'],
       answer: 'Wypłata jest raz w miesiącu, do piętnastego dnia następnego miesiąca. Po pierwszym tygodniu można dostać zaliczkę.' },
     { id: 6, topic: 'Język', keys: ['czy musze znac', 'czy trzeba znac', 'bez niemieckiego', 'bez jezyka', 'koordynator', 'po polsku na miejscu'],
       answer: 'W wielu ofertach niemiecki nie jest wymagany. Na miejscu jest koordynator, który mówi po polsku.' },
@@ -370,7 +442,21 @@
   ];
   function isQuestion(original, t) {
     if (/\?/.test(original)) return true;
+    if (has(t, /\bzalezy od (ceny|kosztu|kosztow|tego ile|stawki|placy|pieniedzy|zarobkow|wyplaty)\b|\bzalezy ile (placa|placicie|zaplacicie|dostane|bedzie kasy)\b/)) return true;
     return has(t, /^(a )?(ile|czy|jak|gdzie|kiedy|kto|co z|a co|jaki|jaka|jakie|dlaczego|po co|skad)\b/);
+  }
+  // "po 2 pazdziernika, a ile moge zarobic?" -> { answer: "po 2 pazdziernika", question: "a ile moge zarobic?" }
+  function splitAnswerQuestion(original) {
+    var m = String(original).match(/^(.*?\S)[\s,;.]+((?:a\s*)?(?:ile|czy|jak|gdzie|kiedy|kto|co z|jakie|jaka|jaki)\b.*)$/i);
+    if (!m) return null;
+    var ans = m[1].replace(/[,;.\s]+$/, '').trim();
+    if (!ans || /^(a|i|no|to|tak)$/i.test(ans)) return null;
+    return { answer: ans, question: m[2].trim() };
+  }
+  function faqLookupAll(t) {
+    var scored = FAQ.map(function (f) { var s = 0; f.keys.forEach(function (k) { if (t.indexOf(k) >= 0) s += k.length; }); return { f: f, s: s }; })
+      .filter(function (x) { return x.s > 0; }).sort(function (a, b) { return b.s - a.s; });
+    return scored.slice(0, 2).map(function (x) { return x.f; });
   }
   function faqLookup(t) {
     var best = null, bestScore = 0;
@@ -422,13 +508,16 @@
   var FILLERS = /\b(y{2,}|e{2,}|m{2,}|hm+|ehm+|yhm+|no wiec|wie pani|kurcze|szczerze mowiac|powiem tak|znaczy sie|tak w ogole)\b/g;
   function clean(t) { return t.replace(FILLERS, ' ').replace(/\s+/g, ' ').trim(); }
   // "B... nie, czekaj, jednak C+E" -> parse the part after the last correction marker first
-  var CORRECTION = /(?:^|\s)(?:nie,? (?:czekaj|przepraszam|sorry|zle)|a nie|przepraszam|poprawiam sie|poprawka|to znaczy|znaczy|jednak|wlasciwie|czyli)\s/g;
+  var CORRECTION = /(?:^|\s)(?:nie,? (?:czekaj|przepraszam|sorry|zle)|a nie|przepraszam|poprawiam sie|poprawka|to znaczy|znaczy|jednak|wlasciwie)\s/g;
   function normalize(fieldId, text, today) {
     var q = QUESTIONS.filter(function (x) { return x.id === fieldId; })[0];
     if (!q) throw new Error('unknown field ' + fieldId);
     var t = clean(deaccent(text));
     if (!t) return { status: 'silence' };
     today = today || mk(2026, 11, 20);
+    // "nie w poniedzialek, we wtorek" / "nie C, tylko B" -> the alternative after the negated part
+    var swap = t.match(/\bnie (?:w|we|od|na|z)? ?\w+(?: \w+)?[ ,]+(?:tylko|lecz|ale|a) (.+)$/) || t.match(/\bnie (?:w|we|od) \w+ (?:tylko )?((?:w|we|od) .+)$/);
+    if (swap && swap[1]) { var rs = q.parse(swap[1].trim(), today, swap[1]); if (rs.status === 'ok') { rs.corrected = true; return rs; } }
     var m, last = -1;
     CORRECTION.lastIndex = 0;
     while ((m = CORRECTION.exec(t))) last = m.index + m[0].length;
@@ -438,16 +527,22 @@
       var rt = q.parse(tail, today, origTail);
       if (rt.status === 'ok') { rt.corrected = true; return rt; }
     }
-    return q.parse(t, today, text);
+    var res = q.parse(t, today, text);
+    if (res.status === 'ok' && has(t, /\b(ale tylko|ale bez|jesli|jezeli|jak bedzie|pod warunkiem|o ile|byle)\b/)) res.constraint = String(text).trim();
+    return res;
   }
 
   // ---------- global intents (any phase of the call) ----------
   function detectIntent(original) {
     var t = clean(deaccent(original));
     if (!t) return null;
-    if (has(t, /\b(wiecej|juz)\b.*\bnie dzwon\w*|\bnie dzwon\w*.*\b(wiecej|juz)\b/) || has(t, /\b(prosze (wiecej |juz )?nie dzwonic|nie dzwoncie|nie dzwon\w* (do mnie )?wiecej|usun\w* (moje )?(dane|numer)|wypisz\w*|nie zycze sobie|rodo)\b/)) return 'optout';
+    if (has(t, /\b(kurw\w*|spierd\w*|pierdol\w*|wypierd\w*|jeb\w*|wal sie|spadaj|chuj\w*)\b/)) return 'abuse';
+    if (has(t, /\b(dajcie mi spokoj|daj mi spokoj|odczepcie sie|nie zawracajcie|nie zawracaj)\b/)) return 'optout';
+
+    if (has(t, /\b(wiecej|juz)\b.*\bnie dzwon\w*|\bnie dzwon\w*.*\b(wiecej|juz)\b/) || has(t, /\b(prosze (wiecej |juz )?nie dzwonic|nie dzwoncie|nie dzwon\w* (do mnie )?wiecej|usun\w* (moje )?(dane|numer)|wypisz\w*|wykresl\w*|skresl\w*|nie zycze sobie|rodo)\b/)) return 'optout';
+    if (has(t, /\bskad (wy )?(w ogole )?(pani |wy |macie |ma pani |pani ma )?(moj |ten |moje )?(numer|telefon|dane)|\bkto (wam |pani )?dal (moj |ten )?(numer|telefon)|\bz jakiej bazy\b|\bskad (macie|ma pani) (moj|moje|ten)\b/)) return 'source';
     if (has(t, /\b(z (prawdziwym )?czlowiekiem|z konsultant\w*|z rekruter\w*|z kims zywym|z (prawdziwa )?osoba|z zywym czlowiekiem|nie chce (rozmawiac )?z (robotem|botem|automatem))\b/)) return 'human';
-    if (has(t, /\b(nie mam (teraz |w tej chwili )?czasu|jestem (teraz )?zajet\w*|prowadze (teraz|auto|samochod)\w*|jade (teraz|autem|samochodem)|za kierownica|jestem teraz w pracy|nie moge (teraz )?rozmawiac|(prosze|moze pani) zadzwonic (pozniej|wieczorem|jutro|za godzine)|oddzwonie|zadzwon\w* pozniej|nie teraz)\b/)) return 'busy';
+    if (has(t, /\b(nie mam (teraz |w tej chwili )?czasu|jestem (teraz )?zajet\w*|prowadze (teraz|auto|samochod)\w*|jade (teraz|autem|samochodem)|za kierownica|jestem teraz w pracy|nie moge (teraz )?rozmawiac|(prosze|moze pani) zadzwonic (pozniej|wieczorem|jutro|za godzine)|oddzwonie|zadzwon\w* pozniej|nie mam jak (gadac|rozmawiac)|nie moge gadac|zadzwon\w* (pan |pani )?(dzisiaj|jutro|wieczorem|po \w+))\b/) || has(t, /^nie teraz$/)) return 'busy';
     if (has(t, /\b(juz nie szukam|nie szukam (juz )?pracy|znalazl\w* (juz )?(prace|robote)|mam juz (prace|robote)|rezygnuje|nieaktualne)\b/)) return 'not_looking';
     if (has(t, /\b(prosze powtorzyc|moze pani powtorzyc|co pani powiedziala|nie doslyszal\w*|jeszcze raz|powtorz\w*|glosniej|nie slysze|slabo slychac|przerywa)\b/) || has(t, /^(co|ze co|slucham|he|hm|jak|prosze)$/) && /\?/.test(original)) return 'repeat';
     if (has(t, /\b(nie rozumiem|nie zrozumial\w*|co to znaczy|co to jest|o co chodzi z|w jakim sensie|w sensie)\b/)) return 'clarify';
@@ -457,7 +552,7 @@
 
   var api = { deaccent: deaccent, normalize: normalize, parseIdentity: function (s) { return parseIdentity(clean(deaccent(s))); },
     parseOffer: function (s) { text0 = s; return parseOffer(clean(deaccent(s))); }, isQuestion: function (s) { return isQuestion(s, deaccent(s)); },
-    faqLookup: function (s) { return faqLookup(deaccent(s)); }, detectIntent: detectIntent, clean: clean, QUESTIONS: QUESTIONS, FAQ: FAQ, mk: mk, iso: iso };
+    faqLookup: function (s) { return faqLookup(deaccent(s)); }, faqLookupAll: function (s) { return faqLookupAll(deaccent(s)); }, detectIntent: detectIntent, clean: clean, splitAnswerQuestion: splitAnswerQuestion, yesNo: function (s) { return yesNo(clean(deaccent(s))); }, offerObjection: offerObjection, QUESTIONS: QUESTIONS, FAQ: FAQ, mk: mk, iso: iso };
 
   // fix: parseStartDate & others receive (t, today, original)
   QUESTIONS.forEach(function (q) {

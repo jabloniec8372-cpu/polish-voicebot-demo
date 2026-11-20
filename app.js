@@ -175,9 +175,9 @@ function answer(text,src){
       bot('Rozumiem. Konsultant oddzwoni najszybciej, jak to możliwe. Dziękuję, do widzenia!','handoff to a human');finish('handoff_requested','Kandydat prosi o rozmowę z konsultantem.');return;}
     if(text&&ph==='question'){var sp=E.splitAnswerQuestion(text);
       if(sp){var q0=E.QUESTIONS[S.qi],r0=E.normalize(q0.id,sp.answer,TODAY);
-        if(r0.status==='ok'){saveAnswer(q0,r0,sp.answer);var said='Zapisuję: '+(r0.spoken||r0.display)+'. ';
+        if(r0.status==='ok'){saveAnswer(q0,r0,sp.answer);var said0='Zapisuję: '+said(q0,r0)+'. ';
           var all0=E.faqLookupAll(sp.question);if(!all0.length)S.unanswered.push(sp.question);
-          bot(said+(all0.length?fill(faqText(all0)):fill('Na pytanie o to nie mam informacji w materiałach, zapiszę je dla konsultanta.')),all0.length?'answer saved + FAQ #'+all0.map(function(x){return x.id;}).join(' + #'):'answer saved + question logged for recruiter');
+          bot(said0+(all0.length?fill(faqText(all0)):fill('Na pytanie o to nie mam informacji w materiałach, zapiszę je dla konsultanta.')),all0.length?'answer saved + FAQ #'+all0.map(function(x){return x.id;}).join(' + #'):'answer saved + question logged for recruiter');
           S.faqLog.push({raw_question:sp.question,matched:all0.map(function(x){return x.topic;}),answered_from_table:!!all0.length,resumed_question:q0.id});
           setTimeout(function(){S.tries=0;next('');},50);return;}
       }
@@ -373,8 +373,8 @@ function tryCorrection(text,force){
       S.fields[q.id]={value:r.value,display:r.display,raw:text,corrected:true,history:hist};
       send('PATCH','/api/candidates/'+S.cand.id+'/custom-fields',{field:q.id,value:r.value,previous_value:f.value,raw_answer:text,status:'corrected_by_candidate'});
       S.notes.push(q.label+': poprawione przez kandydata (było: '+JSON.stringify(f.value)+').');
-      if(S.phase==='summary'){bot('Rozumiem, poprawiam: '+(r.spoken||r.display)+'. Czy teraz wszystko się zgadza?','correction in summary · previous value kept in history');renderAts();return true;}
-      bot('Rozumiem, poprawiam: '+(r.spoken||r.display)+'. '+fill('Wracając do pytania: '+lower(E.QUESTIONS[S.qi].ask)),'correction of question '+(j+1)+' · previous value kept in history');
+      if(S.phase==='summary'){bot('Rozumiem, poprawiam: '+said(q,r)+'. Czy teraz wszystko się zgadza?','correction in summary · previous value kept in history');renderAts();return true;}
+      bot('Rozumiem, poprawiam: '+said(q,r)+'. '+fill('Wracając do pytania: '+lower(E.QUESTIONS[S.qi].ask)),'correction of question '+(j+1)+' · previous value kept in history');
       renderAts();return true;
     }
     if(r.status!=='ok'&&/nie mowil|zle|nie o to/.test(t)){
@@ -398,7 +398,7 @@ function saveAnswer(q,r,text){
   if(r.preferred){send('PATCH','/api/candidates/'+S.cand.id+'/custom-fields',{field:'preferred_start_date',value:r.preferred,raw_answer:text,status:'ok'});S.notes.push('Preferowany termin startu: '+r.preferred+' (najwcześniej '+r.value+').');}
 }
 function onQuestion(text){
-  if(text&&S.pending&&E.yesNo(text)===true){var q1=E.QUESTIONS[S.qi],pv=S.pending;saveAnswer(q1,pv,S.pendingRaw+' → potwierdzone: „'+text+'”');S.tries=0;next('Dobrze, zapisuję: '+(pv.spoken||pv.display)+'. ');return;}
+  if(text&&S.pending&&E.yesNo(text)===true){var q1=E.QUESTIONS[S.qi],pv=S.pending;saveAnswer(q1,pv,S.pendingRaw+' → potwierdzone: „'+text+'”');S.tries=0;next('Dobrze, zapisuję: '+said(q1,pv)+'. ');return;}
   if(text&&S.pending&&E.yesNo(text)===false){S.pending=null;}
   if(text&&tryCorrection(text))return;
   var q=E.QUESTIONS[S.qi];
@@ -413,7 +413,7 @@ function onQuestion(text){
     if(r.notice_until)S.notes.push('Okres wypowiedzenia do '+r.notice_until+'.');
     if(r.preferred){send('PATCH','/api/candidates/'+S.cand.id+'/custom-fields',{field:'preferred_start_date',value:r.preferred,raw_answer:text,status:'ok'});S.notes.push('Preferowany termin startu: '+r.preferred+' (najwcześniej '+r.value+').');}
     var extra=smartSkip(text);
-    S.tries=0;next('Zapisuję: '+(r.spoken||r.display)+'. '+extra);
+    S.tries=0;next('Zapisuję: '+said(q,r)+'. '+extra);
     return;
   }
   if(r.pending){S.pending=r.pending;S.pendingRaw=text;}
@@ -437,13 +437,13 @@ var SKIP_TRIGGERS={
   own_car:/\b(auto|samochod\w*)\b/
 };
 function smartSkip(text){
-  var t=E.deaccent(text),said=[];
+  var t=E.deaccent(text),saidL=[];
   for(var j=S.qi+1;j<E.QUESTIONS.length;j++){
     var q=E.QUESTIONS[j];if(S.fields[q.id]||!SKIP_TRIGGERS[q.id]||!SKIP_TRIGGERS[q.id].test(t))continue;
     var r=E.normalize(q.id,text,TODAY);
-    if(r.status==='ok'){S.fields[q.id]={value:r.value,display:r.display,raw:text,skipped:true};apiField(q.id,r.value,text,'ok_from_earlier_answer');said.push(({driving_licence:'prawo jazdy '+(r.spoken||r.display),german_level:'niemiecki na poziomie '+(r.spoken||r.display),forklift_licence:'uprawnienia: '+(r.spoken||r.display),warehouse_experience:'doświadczenie: '+(r.spoken||r.display),accommodation_needed:'zakwaterowanie: '+(r.spoken||r.display),own_car:'samochód: '+(r.spoken||r.display)})[q.id]||(r.spoken||r.display));}
+    if(r.status==='ok'){S.fields[q.id]={value:r.value,display:r.display,raw:text,skipped:true};apiField(q.id,r.value,text,'ok_from_earlier_answer');saidL.push(said(q,r));}
   }
-  return said.length?'Zanotowałam też: '+said.join(', ')+'. ':'';
+  return saidL.length?'Zanotowałam też: '+saidL.join(', ')+'. ':'';
 }
 function next(prefix){
   if(S.revisit){S.revisit.shift();if(S.revisit.length){S.qi=S.revisit[0];S.tries=1;bot((prefix||'')+'I jeszcze jedno: '+fill(lower(E.QUESTIONS[S.qi].ask)),'revisit unclear answer · last try');return;}
@@ -456,14 +456,39 @@ function next(prefix){
     bot((prefix||'')+'Na koniec wrócę jeszcze do '+(empty.length===1?'jednego pytania':empty.length+' pytań')+', na które nie mam pewnej odpowiedzi. '+fill(E.QUESTIONS[S.qi].ask),'revisits unclear answers before closing');return;}
   startSummary(prefix);
 }
+
+// Natural Polish read-back of a stored value ("ma Pan własne auto" instead of "samochód: tak")
+var DE_PL={'Bayern':'Bawaria','Baden-Württemberg':'Badenia-Wirtembergia','Berlin':'Berlin','Brandenburg':'Brandenburgia','Sachsen':'Saksonia','Niedersachsen':'Dolna Saksonia','Nordrhein-Westfalen':'Nadrenia Północna-Westfalia','Hessen':'Hesja','Hamburg':'Hamburg','Bremen':'Brema','Mecklenburg-Vorpommern':'Meklemburgia','Sachsen-Anhalt':'Saksonia-Anhalt','Thüringen':'Turyngia','Rheinland-Pfalz':'Nadrenia-Palatynat','Saarland':'Saara','Schleswig-Holstein':'Szlezwik-Holsztyn'};
+function natural(qid,f,spoken){
+  if(!f||f.value===null||f.value===undefined)return null;
+  var v=f.value;
+  switch(qid){
+    case 'start_date':var sp=spoken||f.spoken||f.display;return 'może {P} zacząć '+(/^od /.test(sp)?sp:'od '+sp);
+    case 'driving_licence':return (!v.length||v[0]==='brak')?'nie ma {P} prawa jazdy':'prawo jazdy kategorii '+(spoken||f.spoken||f.display).replace(/\s*\(\+.*\)/,'').replace(/\+/g,' plus ');
+    case 'german_level':return v==='brak'?'nie zna {P} niemieckiego':'niemiecki na poziomie '+({'podstawowy (A1-A2)':'podstawowym','komunikatywny (B1)':'komunikatywnym','dobry (B2)':'dobrym','biegły (C1-C2)':'biegłym'}[v]||v);
+    case 'forklift_licence':return v==='brak'?'bez uprawnień na wózki':v==='I WJO'?'uprawnienia UDT pierwszej kategorii WJO':v==='II WJO'?'uprawnienia UDT drugiej kategorii WJO':'niemiecki Staplerschein na wózki';
+    case 'warehouse_experience':return v==='brak'?'bez doświadczenia na magazynie':v==='do 1 roku'?'do roku doświadczenia na magazynie':v==='1-3 lata'?'od roku do trzech lat doświadczenia na magazynie':'ponad trzy lata doświadczenia na magazynie';
+    case 'shift_work':return v==='nie'?'praca na zmiany nie wchodzi w grę':v==='tylko dzienne'?'tylko zmiany dzienne':'praca na zmiany, także nocne, pasuje';
+    case 'own_car':return v==='tak'?'ma {P} własne auto':'nie ma {P} własnego auta';
+    case 'accommodation_needed':return v==='tak'?'potrzebuje {P} zakwaterowania':'zakwaterowanie nie jest potrzebne';
+    case 'preferred_region':return (v[0]==='dowolny')?'region obojętny':'region: '+v.map(function(x){return DE_PL[x]||x;}).join(' albo ');
+    case 'contract_length':return 'wyjazd '+({'do 3 miesięcy':'na krótko, do trzech miesięcy','3-6 miesięcy':'na trzy do sześciu miesięcy','6-12 miesięcy':'na pół roku do roku','powyżej roku':'na ponad rok','na stałe':'na stałe'}[v]||v);
+    case 'id_document':return v==='tak'?'ma {P} ważny dowód lub paszport':'nie ma {P} ważnego dokumentu';
+  }
+  return spoken||f.display;
+}
+function said(q,r){return fill(natural(q.id,{value:r.value,display:r.display},r.spoken)||r.display);}
 var SUM_LABEL={start_date:'start',driving_licence:'prawo jazdy',german_level:'niemiecki',forklift_licence:'wózki',warehouse_experience:'doświadczenie na magazynie',shift_work:'zmiany',own_car:'samochód',accommodation_needed:'zakwaterowanie',preferred_region:'region',contract_length:'wyjazd na',id_document:'ważny dokument'};
 function spokenOf(q){var f=S.fields[q.id];if(!f||f.value===null)return 'brak odpowiedzi';var r=E.normalize(q.id,String(f.raw).split(' → ')[0],TODAY);return (r.status==='ok'&&JSON.stringify(r.value)===JSON.stringify(f.value)&&r.spoken)?r.spoken:f.display;}
 function startSummary(prefix){
   S.phase='summary';S.tries=0;
-  var parts=E.QUESTIONS.map(function(q){return SUM_LABEL[q.id]+': '+spokenOf(q);});
-  bot((prefix||'')+'Na koniec krótkie podsumowanie. '+parts.join(', ')+'. Czy wszystko się zgadza?','summary · candidate can correct anything');
+  var parts=E.QUESTIONS.map(function(q){var f=S.fields[q.id];var n=f&&f.value!==null?natural(q.id,f,q.id==='start_date'||q.id==='driving_licence'?spokenOf(q):null):null;return fill(n||(SUM_LABEL[q.id]+': brak odpowiedzi'));});
+  var a=parts.slice(0,5),b=parts.slice(5);
+  function join(x){return x.length>1?x.slice(0,-1).join(', ')+' i '+x[x.length-1]:x[0];}
+  bot((prefix||'')+'Na koniec krótkie podsumowanie. '+cap(join(a))+'. Do tego: '+join(b)+'. Czy wszystko się zgadza?','summary · candidate can correct anything');
   chips([{t:'tak, wszystko się zgadza'},{t:'nie, start od 9 grudnia'},{t:'niemiecki to tylko podstawy'},{t:'nie wszystko'}]);
 }
+function cap(s){return s.charAt(0).toUpperCase()+s.slice(1);}
 function onSummary(text){
   var yn=E.yesNo(text),t=E.deaccent(text||'');
   if(!text){S.tries++;if(S.tries<2){bot('Czy wszystko się zgadza: tak czy nie?');return;}return closeA();}
@@ -570,7 +595,7 @@ function pgOut(){
   if(!txt.trim()){$('pgOut').textContent='{ }';return;}
   var r=E.normalize($('pgField').value,txt,TODAY);
   var o={field:$('pgField').value,raw_answer:txt,status:r.status};
-  if(r.status==='ok'){o.value=r.value;o.bot_reads_back='Zapisuję: '+(r.spoken||r.display);}
+  if(r.status==='ok'){o.value=r.value;o.bot_reads_back='Zapisuję: '+said({id:$('pgField').value},r);}
   else o.bot_reprompts=r.reprompt||'(field-specific reprompt, then empty after 2 tries)';
   $('pgOut').textContent=JSON.stringify(o,null,2);
 }

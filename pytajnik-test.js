@@ -357,18 +357,25 @@ const SCENARIOS = [
   },
   {
     id: 'C11', category: 'CONVO_BREAKDOWN',
-    desc: 'To samo co C10, ale potocznym "skończył się termin" - reguła NIE łapie tej frazy (ZNANA LUKA)',
+    desc: 'To samo co C10, ale potocznym "skończył się termin" - NAPRAWIONE (było: ZNANA LUKA)',
     run: () => {
+      // Pierwotnie silnik błędnie potwierdzał tu ważne prawo jazdy B, bo
+      // regex usuwania "wygasłych" kategorii znał tylko wygasl/nieaktualn/
+      // niewazn/zabral/odebral/stracil/zatrzymal, nie potoczne "termin się
+      // skończył". Po poprawce w parseLicence (ogólna reguła "termin ...
+      // skonczyl/minal/uplynal" w dowolnej odległości, nie tylko sąsiedniej)
+      // silnik poprawnie prosi o doprecyzowanie, zamiast fałszywie
+      // potwierdzać nieważne uprawnienia. To była najpoważniejsza z 11 luk
+      // znalezionych w drugiej partii, dlatego naprawiona jako jedyna -
+      // konsensus 5 niezależnych AI, zapytanych wprost o priorytet, był:
+      // naprawić tylko tę, resztę zostawić jako udokumentowane ograniczenia.
       const r = E.normalize('driving_licence', 'Mam B, ale mi się termin skończył, jeszcze nie zdążyłem odnowić.');
-      const pass = r.status === 'ok' && eq(r.value, ['B']);
+      const pass = r.status === 'unclear';
       return {
         pass,
-        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (regex usuwania "wygasłych" ` +
-              `kategorii zna tylko słowa wygasl/nieaktualn/niewazn/zabral/odebral/stracil/zatrzymal - ` +
-              `"termin się skończył" nie jest na liście, więc silnik BŁĘDNIE potwierdza ważne prawo jazdy ` +
-              `B, mimo że kandydat właśnie powiedział, że wygasło. To realnie niebezpieczna luka dla bota ` +
-              `rekrutacyjnego - rekomendowana poprawka regexu o "skoncz\\w*|minal\\w* termin")`,
-        knownGap: true
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (NAPRAWIONE: silnik już nie ` +
+              `potwierdza ważnego B, gdy kandydat mówi że "termin się skończył" - prosi o doprecyzowanie, ` +
+              `tak jak przy standardowym "wygasło" w C10)`
       };
     }
   },

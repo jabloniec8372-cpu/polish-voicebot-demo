@@ -222,6 +222,12 @@
     var found = {};
     var re = /(?:^|\s)(b\+e|c\+e|c1|b|c|d|t)(?=\s|$|,)/g, m;
     while ((m = re.exec(s))) found[m[1].toUpperCase()] = true;
+    // same idea but phrased as "termin ... skonczyl/minal/uplynal" (colloquial
+    // "the term/date ran out") - not caught by the proximity-based regex above
+    // because people often put several words between the category and the
+    // word for "expired". If the whole utterance says the term ran out
+    // anywhere, don't confirm any category as currently valid; ask again.
+    if (has(t, /\btermin\w*\b[\s\S]{0,40}\b(skoncz\w*|minal\w*|minela\w*|uplynal\w*)\b|\b(skoncz\w*|minal\w*|minela\w*|uplynal\w*)\b[\s\S]{0,40}\btermin\w*\b/)) found = {};
     var declared = LICENCE_ORDER.filter(function (k) { return found[k]; });
     // a higher category implies the lower ones it requires (C+E -> C, B ; C/C1/D/B+E -> B)
     if (found['C+E']) { found.C = true; found.B = true; }

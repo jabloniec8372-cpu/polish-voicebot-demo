@@ -1,1 +1,265 @@
-Ly8gcHl0YWpuaWstdGVzdC5qcwovLyAiUHl0YWpuaWsiIC0gYWR2ZXJzYXJpYWwgLyBoYXJkLWNhc2UgdGVzdCBoYXJuZXNzIGZvciB0aGUgcmVjcnVpdG1lbnQgdm9pY2Vib3QgZW5naW5lLgovLwovLyBXaHkgdGhpcyBleGlzdHMgKGNvbnRleHQgZm9yIGZ1dHVyZS1tZSAvIFRvbWFzeik6Ci8vIFRoZSBib3QgdGFsa3MgdG8gcmVhbCBwZW9wbGUgb24gcmVhbCBwaG9uZSBjYWxscy4gUmVhbCBjYWxsZXJzIGRvbid0IGFuc3dlcgovLyBwb2xpdGVseSBpbiB0aGUgc2hhcGUgdGhlIGVuZ2luZSBleHBlY3RzIC0gdGhleSBvYmplY3QgdG8gdGhlIG9mZmVyLCBnZXQKLy8gaG9zdGlsZSwgZ28gcXVpZXQsIGludGVycnVwdCB0aGVtc2VsdmVzLCBtaXggbGFuZ3VhZ2VzLCBvciBnaXZlIGFuIGFuc3dlcgovLyB0aGF0IGlzIHRlY2huaWNhbGx5ICJ5ZXMiIGJ1dCBtZWFucyAibm8iIGluIGNvbnRleHQuIFRoaXMgZmlsZSBpcyBhIGZpcnN0Ci8vIGJhdGNoIG9mIHN1Y2ggY2FzZXMsIGdyb3VuZGVkIGluIHRocmVlIHJlYWwtd29ybGQgcGF0dGVybnMgaW5zdGVhZCBvZiBhbgovLyBhY2FkZW1pYyBwZXJzb25hbGl0eSB0eXBvbG9neToKLy8gICAxLiBTQUxFU19PQkpFQ1RJT04gICAtIHN0YW5kYXJkIHNhbGVzLWNhbGwgb2JqZWN0aW9ucyAocHJpY2UsIGRpc3RhbmNlLAovLyAgICAgIHRpbWluZywgbmVlZHMgYXBwcm92YWwgZnJvbSBzcG91c2UpIC0gZG9lcyB0aGUgZW5naW5lIHJvdXRlIHRoZW0gdG8KLy8gICAgICB0aGUgcmlnaHQgb2JqZWN0aW9uIGJ1Y2tldCAvIGRlY2lzaW9uIHN0YXRlPwovLyAgIDIuIERJRkZJQ1VMVF9DQUxMRVIgICAtIGNhbGwtY2VudGVyICJkaWZmaWN1bHQgY2FsbGVyIiBhcmNoZXR5cGVzOgovLyAgICAgIGhvc3RpbGUvYWJ1c2l2ZSwgc3VzcGljaW91cyBpbnRlcnJvZ2F0b3IsIHdhbnRzIGEgaHVtYW4sIHJ1c2hlZC9idXN5LAovLyAgICAgIGhhcmQgb2YgaGVhcmluZywgd3JvbmcgbnVtYmVyLgovLyAgIDMuIENPTlZPX0JSRUFLRE9XTiAgICAtIHZvaWNlLWNvbnZlcnNhdGlvbiBicmVha2Rvd24gcGF0dGVybnM6IHRvcGljCi8vICAgICAgY2hhbmdlIG1pZC1hbnN3ZXIsIHNlbGYtY29ycmVjdGlvbiwgY29kZS1zd2l0Y2hpbmcgdG8gR2VybWFuLAovLyAgICAgIGFtYmlndW91cyBxdWFsaWZpZXJzLCBub24tYW5zd2Vycywgc2lsZW5jZS9maWxsZXIgbm9pc2UuCi8vCi8vIEV2ZXJ5IGNhc2UgaGFzIGEgSEFSRCBhc3NlcnRpb24gYWdhaW5zdCB0aGUgZW5naW5lJ3MgYWN0dWFsIHJldHVybiB2YWx1ZQovLyAoYSBmaWVsZCwgYSBzdGF0dXMsIGFuIGFycmF5KSAtIG5ldmVyICJkaWQgaXQgc291bmQgcG9saXRlIi4gQSBmZXcgY2FzZXMKLy8gYXJlIG1hcmtlZCBrbm93bkdhcDogdHJ1ZSAtIHRoZXkgYXNzZXJ0IHRoZSBlbmdpbmUncyBDVVJSRU5UIChpbXBlcmZlY3QpCi8vIGJlaGF2aW9yIG9uIHB1cnBvc2UsIHNvIGEgZnV0dXJlIGNoYW5nZSB0byB0aGF0IGJlaGF2aW9yIHNob3dzIHVwIGhlcmUgYXMKLy8gYW4gaW50ZW50aW9uYWwgZGVjaXNpb24sIG5vdCBhIHNpbGVudCByZWdyZXNzaW9uLgovLwovLyBVc2FnZTogbm9kZSBweXRham5pay10ZXN0LmpzICAgKGZyb20gdGhlIHJlcG8gcm9vdCwgbmV4dCB0byBlbmdpbmUuanMpCgpjb25zdCBFID0gcmVxdWlyZSgnLi9lbmdpbmUuanMnKTsKCmZ1bmN0aW9uIGVxKGEsIGIpIHsgcmV0dXJuIEpTT04uc3RyaW5naWZ5KGEpID09PSBKU09OLnN0cmluZ2lmeShiKTsgfQoKY29uc3QgU0NFTkFSSU9TID0gWwoKICAvLyAtLS0tLS0tLS0tLS0tLS0tIFNBTEVTX09CSkVDVElPTiAtLS0tLS0tLS0tLS0tLS0tCiAgewogICAgaWQ6ICdTMScsIGNhdGVnb3J5OiAnU0FMRVNfT0JKRUNUSU9OJywKICAgIGRlc2M6ICdPYmlla2NqYTogemEgbWHFgm8gcMWCYWPEhScsCiAgICBydW46ICgpID0+IHsKICAgICAgY29uc3QgciA9IEUub2ZmZXJPYmplY3Rpb24oJ1phIHTEmSByb2JvdMSZIHRvIHN0YW5vd2N6byB6YSBtYcWCbyBwxYJhY8SFLCB3IFBvbHNjZSBtYW0gcHJhd2llIHR5bGUgc2Ftby4nKTsKICAgICAgcmV0dXJuIHsgcGFzczogciA9PT0gJ1NBTEFSWScsIG5vdGU6IGBvZmZlck9iamVjdGlvbiAtPiAke3J9YCB9OwogICAgfQogIH0sCiAgewogICAgaWQ6ICdTMicsIGNhdGVnb3J5OiAnU0FMRVNfT0JKRUNUSU9OJywKICAgIGRlc2M6ICdPYmlla2NqYTogemEgZGFsZWtvJywKICAgIHJ1bjogKCkgPT4gewogICAgICBjb25zdCByID0gRS5vZmZlck9iamVjdGlvbignVG8gamVzdCBrYXdhxYIgZHJvZ2ksIHdvbGHFgmJ5bSBjb8WbIGJsacW8ZWogZG9tdS4nKTsKICAgICAgcmV0dXJuIHsgcGFzczogciA9PT0gJ0xPQ0FUSU9OJywgbm90ZTogYG9mZmVyT2JqZWN0aW9uIC0+ICR7cn1gIH07CiAgICB9CiAgfSwKICB7CiAgICBpZDogJ1MzJywgY2F0ZWdvcnk6ICdTQUxFU19PQkpFQ1RJT04nLAogICAgZGVzYzogJ09iaWVrY2phOiB3YXJ1bmtpIHpha3dhdGVyb3dhbmlhJywKICAgIHJ1bjogKCkgPT4gewogICAgICBjb25zdCByID0gRS5vZmZlck9iamVjdGlvbignSmFraWUgdGFtIHcgb2fDs2xlIHPEhSB3YXJ1bmtpIG1pZXN6a2FuaW93ZSwgYm8gbmllIGNoY8SZIG1pZXN6a2HEhyB3IGN6d8Ozcmtlzyi3IGplZG55bSBwb2tvanUuJyk7CiAgICAgIHJldHVybiB7IHBhc3M6IHIgPT09ICdBQ0NPTU1PREFUSU9OJywgbm90ZTogYG9mZmVyT2JqZWN0aW9uIC0+ICR7cn1gIH07CiAgICB9CiAgfSwKICB7CiAgICBpZDogJ1M0JywgY2F0ZWdvcnk6ICdTQUxFU19PQkpFQ1RJT04nLAogICAgZGVzYzogJ09iaWVrY2phOiB6YSB3Y3plxZtuaWUgLyB0ZXJtaW4nLAogICAgcnVuOiAoKSA9PiB7CiAgICAgIGNvbnN0IHIgPSBFLm9mZmVyT2JqZWN0aW9uKCdNb2fEmSBkb3BpZXJvIG9kIG1hcmNhLCB3Y3plxZtuaWVqIG5pZSBkYW0gcmFkeS4nKTsKICAgICAgcmV0dXJuIHsgcGFzczogciA9PT0gJ1RJTUlORycsIG5vdGU6IGBvZmZlck9iamVjdGlvbiAtPiAke3J9YCB9OwogICAgfQogIH0sCiAgewogICAgaWQ6ICdTNScsIGNhdGVnb3J5OiAnU0FMRVNfT0JKRUNUSU9OJywKICAgIGRlc2M6ICdCcmFrIGRlY3l6amk6ICJtdXN6xJkgdG8gcHJ6ZW15xZtsZcSHIicsCiAgICBydW46ICgpID0+IHsKICAgICAgY29uc3QgciA9IEUucGFyc2VPZmZlcignU3pjemVyemUgdG8gbXVzesSZIHRvIHByemVtecWbbGXEhywgemFkendvbmnEmSBww7bFum5pZWouJyk7CiAgICAgIHJldHVybiB7IHBhc3M6IHIuc3RhdHVzID09PSAnb2snICYmIHIudmFsdWUgPT09ICdub19kZWNpc2lvbicsIG5vdGU6IEpTT04uc3RyaW5naWZ5KHIpIH07CiAgICB9CiAgfSwKICB7CiAgICBpZDogJ1M2JywgY2F0ZWdvcnk6ICdTQUxFU19PQkpFQ1RJT04nLAogICAgZGVzYzogJ1R3YXJkZSAibmllIiBiZXoga29ua3JldG5lZ28gcG93b2R1JywKICAgIHJ1bjogKCkgPT4gewogICAgICBjb25zdCByID0gRS5wYXJzZU9mZmVyKCdOaWUgbm8sIHpkZWN5ZG93YW5pZSBuaWUsIHRvIG5pZSBkbGEgbW5pZS4nKTsKICAgICAgcmV0dXJuIHsgcGFzczogci5zdGF0dXMgPT09ICdvaycgJiYgci52YWx1ZSA9PT0gJ25vdF9pbnRlcmVzdGVkJywgbm90ZTogSlNPTi5zdHJpbmdpZnkocikgfTsKICAgIH0KICB9LAogIHsKICAgIGlkOiAnUzcnLCBjYXRlZ29yeTogJ1NBTEVTX09CSkVDVElPTicsCiAgICBkZXNjOiAnS29uc3VsdGFjamEgeiBtYcWCxbxvbmvEhSArIHByb8WbYmEgbyBTTVMnLAogICAgcnVuOiAoKSA9PiB7CiAgICAgIGNvbnN0IHIgPSBFLnBhcnNlT2ZmZXIoJ011c3rEmSB0byBqZXN6Y3plIHByemVnYWRhxIcgeiDFvG9uxIUsIHByb3N6xJkgd3lzxYJhxIcgU01TLWEgeiBvZmVydMSFLicpOwogICAgICBjb25zdCBvayA9IHIuc3RhdHVzID09PSAnb2snICYmIHIudmFsdWUgPT09ICdub19kZWNpc2lvbicgJiYgci5yZWFzb24gPT09ICdGQU1JTFlfQ09OU1VMVEFUSU9OJyAmJiByLnNtcyA9PT0gdHJ1ZTsKICAgICAgcmV0dXJuIHsgcGFzczogb2ssIG5vdGU6IEpTT04uc3RyaW5naWZ5KHIpIH07CiAgICB9CiAgfSwKCiAgLy8gLS0tLS0tLS0tLS0tLS0tLSBESUZGSUNVTFRfQ0FMTEVSIC0tLS0tLS0tLS0tLS0tLS0KICB7CiAgICBpZDogJ0QxJywgY2F0ZWdvcnk6ICdESUZGSUNVTFRfQ0FMTEVSJywKICAgIGRlc2M6ICdQb2RlanJ6bGl3eTogc2vEhWQgbWFjaWUgbcOzaiBudW1lcicsCiAgICBydW46ICgpID0+IHsKICAgICAgY29uc3QgciA9IEUuZGV0ZWN0SW50ZW50KCdBIHRhayB3IG9nw7NsZSB0byBza8SFZCB3IG9nw7NsZSBtYWNpZSBtw7NqIG51bWVyIHRlbGVmb251LCBibyBqYSBuaWdkemllIHNpxJkgbmllIHphcGlzeXdhxYJlbS4nKTsKICAgICAgcmV0dXJuIHsgcGFzczogciA9PT0gJ3NvdXJjZScsIG5vdGU6IGBkZXRlY3RJbnRlbnQgLT4gJHtyfWAgfTsKICAgIH0KICB9LAogIHsKICAgIGlkOiAnRDInLCBjYXRlZ29yeTogJ0RJRkZJQ1VMVF9DQUxMRVInLAogICAgZGVzYzogJ1dyb2dpL3d1bGdhcm55IC0gb2JlbGdhIG1hIHBpZXJ3c3plxYtzdHdvIG5hZCBvcHQtb3V0JywKICAgIHJ1bjogKCkgPT4gewogICAgICBjb25zdCByID0gRS5kZXRlY3RJbnRlbnQoJ1NwaWVyZGFsYWogaSB3acSZY2VqIG5pZSBkendvxYQuJyk7CiAgICAgIHJldHVybiB7IHBhc3M6IHIgPT09ICdhYnVzZScsIG5vdGU6IGBkZXRlY3RJbnRlbnQgLT4gJHtyfSAobXVzaSB3eWdyYcSHIHogJ29wdG91dCcpYCB9OwogICAgfQogIH0sCiAgewogICAgaWQ6ICdEMycsIGNhdGVnb3J5OiAnRElGRklDVUxUX0NBTExFUicsCiAgICBkZXNjOiAnQ2hjZSBjeMWCb3dpZWthIChwb3p5dHl3KSB2cy4gc2Zvcm11xYJvd2FuaWUsIGt0w7NyZWdvIHNpbG5payBOSUUgxYJhcGllIChsdWvEgSknLAogICAgcnVuOiAoKSA9PiB7CiAgICAgIGNvbnN0IGhpdCA9IEUuZGV0ZWN0SW50ZW50KCdQcm9zesSZLCBjaGPEmSByb3ptYXdpYcSHIHogcHJhd2R6aXd5bSBjxYJvd2llraWVtLCBuaWUgeiBhdXRvbWF0ZW0uJyk7CiAgICAgIGNvbnN0IG1pc3MgPSBFLmRldGVjdEludGVudCgnRGFqY2llIG1pIG9kIHJhenUgamFraWVnb8WbIHByYXdkeml3ZWdvIGtvbnN1bHRhbnRhLicpOwogICAgICBjb25zdCBwYXNzID0gaGl0ID09PSAnaHVtYW4nICYmIG1pc3MgPT09IG51bGw7CiAgICAgIHJldHVybiB7CiAgICAgICAgcGFzcywKICAgICAgICBub3RlOiBgaGl0PSJ6IHByYXdkeml3eW0gY3psb3dpZWtpZW0iIC0+ICR7aGl0fSAob2N6ZWtpd2FuZSBodW1hbik7IGAgKwogICAgICAgICAgICAgIGBtaXNzPSJwcmF3ZHppd2VnbyBrb25zdWx0YW50YSIgKGJlei... (trimmed, full content omitted in echo)`,
+// pytajnik-test.js
+// "Pytajnik" - adversarial / hard-case test harness for the recruitment voicebot engine.
+//
+// Why this exists (context for future-me / Tomasz):
+// The bot talks to real people on real phone calls. Real callers don't answer
+// politely in the shape the engine expects - they object to the offer, get
+// hostile, go quiet, interrupt themselves, mix languages, or give an answer
+// that is technically "yes" but means "no" in context. This file is a first
+// batch of such cases, grounded in three real-world patterns instead of an
+// academic personality typology:
+//   1. SALES_OBJECTION   - standard sales-call objections (price, distance,
+//      timing, needs approval from spouse) - does the engine route them to
+//      the right objection bucket / decision state?
+//   2. DIFFICULT_CALLER   - call-center "difficult caller" archetypes:
+//      hostile/abusive, suspicious interrogator, wants a human, rushed/busy,
+//      hard of hearing, wrong number.
+//   3. CONVO_BREAKDOWN    - voice-conversation breakdown patterns: topic
+//      change mid-answer, self-correction, code-switching to German,
+//      ambiguous qualifiers, non-answers, silence/filler noise.
+//
+// Every case has a HARD assertion against the engine's actual return value
+// (a field, a status, an array) - never "did it sound polite". A few cases
+// are marked knownGap: true - they assert the engine's CURRENT (imperfect)
+// behavior on purpose, so a future change to that behavior shows up here as
+// an intentional decision, not a silent regression.
+//
+// Usage: node pytajnik-test.js   (from the repo root, next to engine.js)
+
+const E = require('./engine.js');
+
+function eq(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+
+const SCENARIOS = [
+
+  // ---------------- SALES_OBJECTION ----------------
+  {
+    id: 'S1', category: 'SALES_OBJECTION',
+    desc: 'Obiekcja: za mało płacą',
+    run: () => {
+      const r = E.offerObjection('Za tę robotę to stanowczo za mało płacą, w Polsce mam prawie tyle samo.');
+      return { pass: r === 'SALARY', note: `offerObjection -> ${r}` };
+    }
+  },
+  {
+    id: 'S2', category: 'SALES_OBJECTION',
+    desc: 'Obiekcja: za daleko',
+    run: () => {
+      const r = E.offerObjection('To jest kawał drogi, wolałbym coś bliżej domu.');
+      return { pass: r === 'LOCATION', note: `offerObjection -> ${r}` };
+    }
+  },
+  {
+    id: 'S3', category: 'SALES_OBJECTION',
+    desc: 'Obiekcja: warunki zakwaterowania',
+    run: () => {
+      const r = E.offerObjection('Jakie tam w ogóle są warunki mieszkaniowe, bo nie chcę mieszkać w czwórkę w jednym pokoju.');
+      return { pass: r === 'ACCOMMODATION', note: `offerObjection -> ${r}` };
+    }
+  },
+  {
+    id: 'S4', category: 'SALES_OBJECTION',
+    desc: 'Obiekcja: za wcześnie / termin',
+    run: () => {
+      const r = E.offerObjection('Mogę dopiero od marca, wcześniej nie dam rady.');
+      return { pass: r === 'TIMING', note: `offerObjection -> ${r}` };
+    }
+  },
+  {
+    id: 'S5', category: 'SALES_OBJECTION',
+    desc: 'Brak decyzji: "muszę to przemyśleć"',
+    run: () => {
+      const r = E.parseOffer('Szczerze to muszę to przemyśleć, zadzwonię później.');
+      return { pass: r.status === 'ok' && r.value === 'no_decision', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'S6', category: 'SALES_OBJECTION',
+    desc: 'Twarde "nie" bez konkretnego powodu',
+    run: () => {
+      const r = E.parseOffer('Nie no, zdecydowanie nie, to nie dla mnie.');
+      return { pass: r.status === 'ok' && r.value === 'not_interested', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'S7', category: 'SALES_OBJECTION',
+    desc: 'Konsultacja z małżonką + prośba o SMS',
+    run: () => {
+      const r = E.parseOffer('Muszę to jeszcze przegadać z żoną, proszę wysłać SMS-a z ofertą.');
+      const ok = r.status === 'ok' && r.value === 'no_decision' && r.reason === 'FAMILY_CONSULTATION' && r.sms === true;
+      return { pass: ok, note: JSON.stringify(r) };
+    }
+  },
+
+  // ---------------- DIFFICULT_CALLER ----------------
+  {
+    id: 'D1', category: 'DIFFICULT_CALLER',
+    desc: 'Podejrzliwy: skąd macie mój numer',
+    run: () => {
+      const r = E.detectIntent('A tak w ogóle to skąd w ogóle macie mój numer telefonu, bo ja nigdzie się nie zapisywałem.');
+      return { pass: r === 'source', note: `detectIntent -> ${r}` };
+    }
+  },
+  {
+    id: 'D2', category: 'DIFFICULT_CALLER',
+    desc: 'Wrogi/wulgarny - obelga ma pierwszeństwo nad opt-out',
+    run: () => {
+      const r = E.detectIntent('Spierdalaj i więcej nie dzwoń.');
+      return { pass: r === 'abuse', note: `detectIntent -> ${r} (musi wygrać z 'optout')` };
+    }
+  },
+  {
+    id: 'D3', category: 'DIFFICULT_CALLER',
+    desc: 'Chce człowieka (pozytyw) vs. sformułowanie, którego silnik NIE łapie (luka)',
+    run: () => {
+      const hit = E.detectIntent('Proszę, chcę rozmawiać z prawdziwym człowiekiem, nie z automatem.');
+      const miss = E.detectIntent('Dajcie mi od razu jakiegoś prawdziwego konsultanta.');
+      const pass = hit === 'human' && miss === null;
+      return {
+        pass,
+        note: `hit="z prawdziwym czlowiekiem" -> ${hit} (oczekiwane human); ` +
+              `miss="prawdziwego konsultanta" (bez słowa "z") -> ${miss} (oczekiwane null - to realna luka, nie błąd testu)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'D4', category: 'DIFFICULT_CALLER',
+    desc: 'Zajęty/w pośpiechu - za kierownicą',
+    run: () => {
+      const r = E.detectIntent('Słuchaj pani, ja teraz jestem za kierownicą, nie mam jak gadać, oddzwonię wieczorem.');
+      return { pass: r === 'busy', note: `detectIntent -> ${r}` };
+    }
+  },
+  {
+    id: 'D5', category: 'DIFFICULT_CALLER',
+    desc: 'Niedosłyszący - prosi o powtórzenie i głośniej',
+    run: () => {
+      const r = E.detectIntent('Co? Proszę powtórzyć, słabo słychać, może pani głośniej?');
+      return { pass: r === 'repeat', note: `detectIntent -> ${r}` };
+    }
+  },
+  {
+    id: 'D6', category: 'DIFFICULT_CALLER',
+    desc: 'Osoba trzecia odbiera - nieobecność',
+    run: () => {
+      const r = E.parseIdentity('Nie ma go, pojechał w trasę, może pani zadzwonić wieczorem.');
+      return { pass: r.status === 'absent', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'D7', category: 'DIFFICULT_CALLER',
+    desc: 'Pomyłka numeru + żądanie zaprzestania dzwonienia (dwie funkcje, jedna wypowiedź)',
+    run: () => {
+      const id = E.parseIdentity('Ja nikogo takiego nie znam, to pomyłka, proszę więcej nie dzwonić.');
+      const intent = E.detectIntent('Ja nikogo takiego nie znam, to pomyłka, proszę więcej nie dzwonić.');
+      const pass = id.status === 'ok' && id.value === false && intent === 'optout';
+      return { pass, note: `parseIdentity -> ${JSON.stringify(id)} | detectIntent -> ${intent}` };
+    }
+  },
+
+  // ---------------- CONVO_BREAKDOWN ----------------
+  {
+    id: 'C1', category: 'CONVO_BREAKDOWN',
+    desc: 'Odpowiedź + nagła zmiana tematu w tym samym zdaniu',
+    run: () => {
+      const r = E.splitAnswerQuestion('pół roku, a ile wy macie lat');
+      const pass = !!r && r.answer === 'pół roku' && r.question === 'a ile wy macie lat';
+      return { pass, note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'C2', category: 'CONVO_BREAKDOWN',
+    desc: 'Autokorekta w locie z wypełniaczami ("nie, czekaj, przepraszam...")',
+    run: () => {
+      const r = E.normalize('driving_licence', 'B, nie czekaj, przepraszam, miałem na myśli C plus E');
+      const pass = r.status === 'ok' && eq(r.value, ['B', 'C', 'C+E']) && r.corrected === true;
+      return { pass, note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'C3', category: 'CONVO_BREAKDOWN',
+    desc: 'Przełączenie na niemiecki w środku rozmowy',
+    run: () => {
+      const r = E.normalize('german_level', 'Ich spreche sehr gut Deutsch');
+      return { pass: r.status === 'ok' && r.value === 'biegły (C1-C2)', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'C4', category: 'CONVO_BREAKDOWN',
+    desc: 'Odpowiedź niejednoznaczna - zaprzeczenie przebija twierdzenie (ZNANA LUKA)',
+    run: () => {
+      // Mówi "mam" (mam auto), ale precyzuje że to nie jego tylko żony.
+      // Silnik widzi "nie" w zdaniu i generycznie klasyfikuje to jako "nie".
+      // To realne ryzyko przy telefonach: osoba de facto MA dostęp do auta.
+      const r = E.normalize('own_car', 'mam, ale to nie mój, tylko żony');
+      const pass = r.status === 'ok' && r.value === 'nie';
+      return {
+        pass,
+        note: `normalize('own_car', 'mam, ale to nie moj, tylko zony') -> ${JSON.stringify(r)} ` +
+              `(silnik gubi "mam" na rzecz "nie" - warto rozważyć poprawkę kolejności reguł w yesNo())`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'C5', category: 'CONVO_BREAKDOWN',
+    desc: 'Monosylabowa niby-odpowiedź bez treści',
+    run: () => {
+      const r = E.normalize('contract_length', 'no');
+      return { pass: r.status === 'unclear', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'C6', category: 'CONVO_BREAKDOWN',
+    desc: 'Sama wata słowna / wahanie, zero treści',
+    run: () => {
+      const r = E.normalize('start_date', 'yyyy eee no wiec');
+      return { pass: r.status === 'silence', note: JSON.stringify(r) };
+    }
+  },
+  {
+    id: 'C7', category: 'CONVO_BREAKDOWN',
+    desc: 'Cisza / pusta wypowiedź wprost',
+    run: () => {
+      const r = E.normalize('start_date', '   ');
+      return { pass: r.status === 'silence', note: JSON.stringify(r) };
+    }
+  },
+];
+
+// ---------------- runner + grouped report ----------------
+const byCategory = {};
+let passCount = 0, failCount = 0, gapCount = 0;
+
+SCENARIOS.forEach(s => {
+  const res = s.run();
+  byCategory[s.category] = byCategory[s.category] || { pass: 0, fail: 0, gaps: [], failures: [] };
+  if (res.pass) {
+    passCount++;
+    byCategory[s.category].pass++;
+    if (res.knownGap) { gapCount++; byCategory[s.category].gaps.push(`${s.id} ${s.desc}: ${res.note}`); }
+  } else {
+    failCount++;
+    byCategory[s.category].fail++;
+    byCategory[s.category].failures.push(`${s.id} ${s.desc}: ${res.note}`);
+  }
+});
+
+console.log('=== Pytajnik — raport (grupowany wg kategorii) ===\n');
+Object.keys(byCategory).forEach(cat => {
+  const c = byCategory[cat];
+  console.log(`${cat}: ${c.pass} OK / ${c.fail} FAIL`);
+  if (c.failures.length) {
+    console.log('  NIEOCZEKIWANE (prawdziwy regres, nie udokumentowana luka):');
+    c.failures.forEach(f => console.log('   - ' + f));
+  }
+  if (c.gaps.length) {
+    console.log('  Udokumentowane luki (test asercji działa, ale ujawnia realną słabość):');
+    c.gaps.forEach(g => console.log('   - ' + g));
+  }
+  console.log('');
+});
+
+console.log(`RAZEM: ${passCount} przeszło (w tym ${gapCount} to oznaczone luki), ${failCount} nieoczekiwanych błędów, ${SCENARIOS.length} scenariuszy.`);
+if (failCount > 0) process.exitCode = 1;

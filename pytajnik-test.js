@@ -226,6 +226,248 @@ const SCENARIOS = [
       return { pass: r.status === 'silence', note: JSON.stringify(r) };
     }
   },
+
+  // ======================================================================
+  // DRUGA PARTIA - zebrana od kilku niezależnych AI (ChatGPT/Gemini/Kimi/Grok
+  // itp.), przefiltrowana z duplikatów i zweryfikowana wprost na engine.js
+  // (nie na wiarę - każdy wynik poniżej to rzeczywisty output node, nie
+  // przewidywanie). Źle potwierdzone "oczekiwania" AI zostały poprawione do
+  // tego, co silnik FAKTYCZNIE robi.
+  // ======================================================================
+
+  // ---------------- SALES_OBJECTION (ciąg dalszy) ----------------
+  {
+    id: 'S8', category: 'SALES_OBJECTION',
+    desc: 'Podwójna negacja oznaczająca ZGODĘ ("nie mam nic przeciwko")',
+    run: () => {
+      // "Nie mam nic przeciwko wyjazdowi. Nie ma powodu, żebym tej roboty nie wziął."
+      // = jednoznaczne TAK po polsku, ale 3x "nie" w zdaniu.
+      const r = E.parseOffer('Nie mam nic przeciwko wyjazdowi. Nie ma powodu, żebym tej roboty nie wziął.');
+      const pass = r.status === 'ok' && r.value === 'not_interested';
+      return {
+        pass,
+        note: `parseOffer -> ${JSON.stringify(r)} (generyczna reguła "nie" w parseOffer() łapie każde ` +
+              `"nie" i zwraca not_interested, nie licząc się z tym, że w tym zdaniu "nie...nie...nie" ` +
+              `składa się na potwierdzenie, nie odmowę - realne ryzyko odrzucenia zainteresowanego kandydata)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'S9', category: 'SALES_OBJECTION',
+    desc: 'Odmowa dotyczy nagrywania rozmowy, NIE oferty pracy',
+    run: () => {
+      const r = E.parseOffer('Nie, na nagrywanie się nie zgadzam. O robocie możemy normalnie pogadać.');
+      const pass = r.status === 'ok' && r.value === 'not_interested';
+      return {
+        pass,
+        note: `parseOffer -> ${JSON.stringify(r)} (silnik nie rozróżnia TEMATU odmowy - "nie" przy ` +
+              `nagrywaniu zostaje odczytane jako odmowa SAMEJ OFERTY, mimo że druga część zdania ` +
+              `wyraźnie zaprasza do rozmowy o pracy)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'S10', category: 'SALES_OBJECTION',
+    desc: 'Odmowa jednego stanowiska + entuzjazm dla drugiego, w jednym zdaniu',
+    run: () => {
+      const r = E.parseOffer('Za kółko to mnie pan nie zapisuje, nie chcę. Ale na magazyn jak najbardziej, o to dzwonię.');
+      const pass = r.status === 'ok' && r.value === 'not_interested';
+      return {
+        pass,
+        note: `parseOffer -> ${JSON.stringify(r)} (wcześniejsze "nie chce" wygrywa z późniejszym ` +
+              `"jak najbardziej" - silnik gubi fakt, że kandydat realnie CHCE pracy na magazynie, ` +
+              `tylko odmawia innego stanowiska)`,
+        knownGap: true
+      };
+    }
+  },
+
+  // ---------------- DIFFICULT_CALLER (ciąg dalszy) ----------------
+  {
+    id: 'D8', category: 'DIFFICULT_CALLER',
+    desc: 'Dialekt (śląskie "ni mom") - trafia we właściwą odpowiedź przypadkiem',
+    run: () => {
+      // "ni" (śląskie "nie") nie jest rozpoznawane jako dialekt - trafia
+      // w wynik "nie" tylko przez przypadkowe zderzenie z regexem na "ni"
+      // jako potoczne "nope" (osobna reguła, niezależna od dialektu).
+      const r = E.normalize('own_car', 'Jo, mom prawo jazdy od dziesięciu lot, ale auto to ni mom, bo mi się zepsuło wczoraj.');
+      const pass = r.status === 'ok' && r.value === 'nie';
+      return {
+        pass,
+        note: `normalize('own_car', ...) -> ${JSON.stringify(r)} (wynik poprawny, ale nie dzięki ` +
+              `rozpoznaniu dialektu - "ni" przypadkowo łapie się na regex \\bni\\b zarezerwowany dla ` +
+              `potocznego "nope"; silnik nie "rozumie" śląskiego, po prostu miał szczęście)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'D9', category: 'DIFFICULT_CALLER',
+    desc: 'Komplement + prośba o człowieka (pozytywna kontrola odporności)',
+    run: () => {
+      const r = E.detectIntent('Fajnie gada się z panią, naprawdę… a może jednak połączę z żywym człowiekiem, bo mam wrażenie że rozmawiam z automatyczną sekretarką.');
+      return { pass: r === 'human', note: `detectIntent -> ${r} (komplement na wstępie nie zagłusza wykrycia prośby o człowieka)` };
+    }
+  },
+
+  // ---------------- CONVO_BREAKDOWN (ciąg dalszy) ----------------
+  {
+    id: 'C8', category: 'CONVO_BREAKDOWN',
+    desc: 'Cudze uprawnienia przypisane sobie (brat ma C+E, ja tylko B)',
+    run: () => {
+      const r = E.normalize('driving_licence', 'Brat ma ce plus e i po niemiecku gada, ja to tylko be mam, po polsku się dogadam.');
+      const pass = r.status === 'ok' && eq(r.value, ['B', 'C', 'C+E']);
+      return {
+        pass,
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (silnik zlepia uprawnienia ` +
+              `brata z "ja to TYLKO be mam" w jeden wynik B+C+C+E - nie rozróżnia PODMIOTU wypowiedzi, ` +
+              `tylko zbiera wszystkie wzmianki o kategoriach z całego zdania)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'C9', category: 'CONVO_BREAKDOWN',
+    desc: 'Wyraźne zaprzeczenie jednej kategorii NIE psuje wyniku (kontrola odporności)',
+    run: () => {
+      const r = E.normalize('driving_licence', 'Be i ce mam, ale przyczepy nie, tego e nie robiłem. Na samą ciężarówkę mogę.');
+      const pass = r.status === 'ok' && eq(r.value, ['B', 'C']);
+      return {
+        pass,
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (dobra wiadomość: "ce" i osobne ` +
+              `"e" nie zlepiają się automatycznie w C+E, bo nie stoją bezpośrednio przy sobie - silnik ` +
+              `poprawnie NIE przypisuje kategorii E, którą kandydat wprost odrzucił)`
+      };
+    }
+  },
+  {
+    id: 'C10', category: 'CONVO_BREAKDOWN',
+    desc: 'Wygasłe prawo jazdy ("wygasło") - rozpoznane i poprawnie odrzucone',
+    run: () => {
+      const r = E.normalize('driving_licence', 'Mam B, ale mi wygasło, jeszcze nie zdążyłem odnowić.');
+      const pass = r.status === 'unclear';
+      return {
+        pass,
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (silnik MA regułę usuwania ` +
+              `kategorii opisanej jako "wygasła" - słusznie nie zalicza B jako aktualnego uprawnienia)`
+      };
+    }
+  },
+  {
+    id: 'C11', category: 'CONVO_BREAKDOWN',
+    desc: 'To samo co C10, ale potocznym "skończył się termin" - reguła NIE łapie tej frazy (ZNANA LUKA)',
+    run: () => {
+      const r = E.normalize('driving_licence', 'Mam B, ale mi się termin skończył, jeszcze nie zdążyłem odnowić.');
+      const pass = r.status === 'ok' && eq(r.value, ['B']);
+      return {
+        pass,
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(r)} (regex usuwania "wygasłych" ` +
+              `kategorii zna tylko słowa wygasl/nieaktualn/niewazn/zabral/odebral/stracil/zatrzymal - ` +
+              `"termin się skończył" nie jest na liście, więc silnik BŁĘDNIE potwierdza ważne prawo jazdy ` +
+              `B, mimo że kandydat właśnie powiedział, że wygasło. To realnie niebezpieczna luka dla bota ` +
+              `rekrutacyjnego - rekomendowana poprawka regexu o "skoncz\\w*|minal\\w* termin")`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'C12', category: 'CONVO_BREAKDOWN',
+    desc: 'Żargon branżowy spoza słownika ("ceplusa", "kółko") - w ogóle nierozpoznany',
+    run: () => {
+      const rLic = E.normalize('driving_licence', 'Mam ceplusa i kółko, ale badania mam przeterminowane o miesiąc, więc nie wiem, czy to przejdzie.');
+      const pass = rLic.status === 'unclear';
+      return {
+        pass,
+        note: `normalize('driving_licence', ...) -> ${JSON.stringify(rLic)} (slangowe "ceplusa" - zlepione, ` +
+              `bez spacji/plusa - nie trafia w żaden wzorzec C+E; silnik prosi o doprecyzowanie, co jest ` +
+              `bezpieczne, ale pokazuje dziurę w słowniku realnego żargonu magazynowo-transportowego)`
+      };
+    }
+  },
+  {
+    id: 'C13', category: 'CONVO_BREAKDOWN',
+    desc: 'Ten sam żargon dla uprawnień WJO - daje BŁĘDNĄ odpowiedź "brak", nie "unclear" (ZNANA LUKA)',
+    run: () => {
+      const rWjo = E.normalize('forklift_licence', 'Mam ceplusa i kółko, ale badania mam przeterminowane o miesiąc, więc nie wiem, czy to przejdzie.');
+      const pass = rWjo.status === 'ok' && rWjo.value === 'brak';
+      return {
+        pass,
+        note: `normalize('forklift_licence', ...) -> ${JSON.stringify(rWjo)} (TO JEST GORSZE niż unclear: ` +
+              `"kółko" dla WJO silnik ignoruje całkowicie, ale potem łapie przypadkowe "nie" z "nie wiem, ` +
+              `czy to przejdzie" (chodzi o badania, nie o wózek!) i pewnie deklaruje BRAK uprawnień WJO - ` +
+              `fałszywie confident odpowiedź tam, gdzie kandydat faktycznie zgłosił, że je ma)`,
+        knownGap: true
+      };
+    }
+  },
+  {
+    id: 'C14', category: 'CONVO_BREAKDOWN',
+    desc: 'Data warunkowa ("jeśli szef puści") - poprawnie oznaczona jako niepewna (kontrola odporności)',
+    run: () => {
+      const r = E.normalize('start_date', 'Tak, mogę zacząć w poniedziałek, jeśli mnie szef wcześniej puści. Jeszcze z nim nie gadałem.');
+      const pass = r.status === 'ok' && typeof r.constraint === 'string' && r.constraint.length > 0;
+      return {
+        pass,
+        note: `normalize('start_date', ...) -> ${JSON.stringify(r)} (silnik wyciąga "poniedziałek" jako ` +
+              `datę, ALE dopisuje pole .constraint z oryginalnym zdaniem - to dobry mechanizm: warstwa ` +
+              `wyżej (np. rekruter/log) widzi, że ta data jest warunkowa, nie twardo potwierdzona)`
+      };
+    }
+  },
+  {
+    id: 'C15', category: 'CONVO_BREAKDOWN',
+    desc: 'Kontr-pytanie o stawkę zamiast odpowiedzi o doświadczeniu (mismatched slot)',
+    run: () => {
+      const rExp = E.normalize('warehouse_experience', 'A jakie macie stawki?');
+      const isQ = E.isQuestion('A jakie macie stawki?');
+      const pass = rExp.status === 'unclear' && isQ === true;
+      return {
+        pass,
+        note: `normalize('warehouse_experience', ...) -> ${JSON.stringify(rExp)} | isQuestion -> ${isQ} ` +
+              `(dobra wiadomość: silnik nie zgaduje fałszywego "brak doświadczenia" z pytania o stawkę - ` +
+              `wraca unclear, a isQuestion() osobno potwierdza, że to w ogóle nie była odpowiedź, tylko ` +
+              `pytanie zwrotne - warstwa wyżej może to rozróżnić)`
+      };
+    }
+  },
+  {
+    id: 'C16', category: 'CONVO_BREAKDOWN',
+    desc: 'Ironia przy poziomie niemieckiego - całkowicie nierozpoznana (ani źle, ani dobrze)',
+    run: () => {
+      const r = E.normalize('german_level', 'Niemiecki? No, perfekcyjnie… Guten tag i danke, i na tym się kończy, hehe.');
+      const pass = r.status === 'unclear';
+      return {
+        pass,
+        note: `normalize('german_level', ...) -> ${JSON.stringify(r)} ("perfekcyjnie" NIE trafia w regex ` +
+              `"perfekt\\w*" (brakuje litery "t" na styku rdzenia), a "Guten tag" nie trafia w "\\bgut\\b" ` +
+              `(bo to "guten", nie "gut") - silnik bezpiecznie nie zgaduje fałszywego C1-C2, ale też w ` +
+              `ogóle nie wyłapuje realnej treści ("tylko dwa zwroty po niemiecku" = raczej poziom 1)`
+      };
+    }
+  },
+  {
+    id: 'C17', category: 'CONVO_BREAKDOWN',
+    desc: 'Filler "tak, tak" przykrywa realną treść przeczącą (ZNANA LUKA - mirror odwrotność C4)',
+    run: () => {
+      // Pytanie: "Czy ma pan własny samochód?" Odpowiedź: potwierdzenie
+      // zrozumienia pytania ("no tak, tak") + treść, która mówi NIE (auto
+      // oddane na złom). Silnik łapie "tak" jako wypełniacz-potwierdzenie
+      // i nie widzi żadnego "nie" dalej w zdaniu (bo "oddałem na złom" nie
+      // zawiera słowa "nie").
+      const r = E.normalize('own_car', 'No tak, tak, właśnie z tym jest problem, bo oddałem na złom w zeszłym tygodniu.');
+      const pass = r.status === 'ok' && r.value === 'tak';
+      return {
+        pass,
+        note: `normalize('own_car', ...) -> ${JSON.stringify(r)} (odwrotność C4: tam generyczne "nie" ` +
+              `przykrywało "mam", tutaj filler "tak, tak" (potwierdzenie usłyszenia pytania, nie ` +
+              `odpowiedź) przykrywa realną treść "oddałem auto na złom" = NIE MAM auta - bo informacja ` +
+              `o złomowaniu nie zawiera żadnego słowa z listy "nie"-synonimów)`,
+        knownGap: true
+      };
+    }
+  },
 ];
 
 // ---------------- runner + grouped report ----------------
